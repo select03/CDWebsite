@@ -72,7 +72,6 @@ function MainAppContent() {
       <Header
         currentView={currentView}
         onNavigate={handleNavigate}
-        onOpenQuiz={() => setIsQuizOpen(true)}
         onSelectServiceForContact={handleSelectServiceForContact}
       />
 
@@ -82,7 +81,6 @@ function MainAppContent() {
           {/* 1. 代表作展覽 (Exhibition Timeline, sorted by year) */}
           <Hero
             onNavigate={handleNavigate}
-            onOpenQuiz={() => setIsQuizOpen(true)}
             onPlayTrailer={() => setIsTrailerOpen(true)}
           />
 
@@ -92,7 +90,6 @@ function MainAppContent() {
           {/* 3. 濃縮導覽區塊 (Condensed Portal Cards) */}
           <HomeQuickPortals
             onNavigate={handleNavigate}
-            onOpenQuiz={() => setIsQuizOpen(true)}
           />
         </main>
       )}

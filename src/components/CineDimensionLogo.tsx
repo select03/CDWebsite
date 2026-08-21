@@ -19,6 +19,7 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const activeLogo = customLogo || assets?.logo;
+  const isDefaultSvgLogo = !activeLogo || activeLogo === '/images/logo.svg' || activeLogo.endsWith('logo.svg');
 
   // Reset image error state whenever activeLogo changes
   React.useEffect(() => {
@@ -51,7 +52,7 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
     <div className={`inline-flex items-center gap-2.5 select-none shrink-0 min-w-max ${className}`}>
       {/* Brand Icon or Custom Uploaded Logo */}
       <div className={`relative flex items-center justify-center shrink-0 ${iconSizeClasses[size]}`}>
-        {activeLogo && !imageError ? (
+        {!isDefaultSvgLogo && activeLogo && !imageError ? (
           <img
             src={activeLogo}
             alt="維度影學 Cine Dimension"

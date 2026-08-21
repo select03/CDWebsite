@@ -6,7 +6,7 @@ import { Menu, X, Sparkles } from 'lucide-react';
 interface HeaderProps {
   currentView: PageView;
   onNavigate: (view: PageView) => void;
-  onOpenQuiz: () => void;
+  onOpenQuiz?: () => void;
   onSelectServiceForContact?: (serviceTitle: string) => void;
 }
 
@@ -69,29 +69,20 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Editorial Action CTAs */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             <button
-              onClick={onOpenQuiz}
-              className="flex items-center gap-1.5 text-[11px] font-sans tracking-widest uppercase text-stone-700 hover:text-amber-800 transition-colors border border-stone-300 px-2.5 py-1.5 rounded whitespace-nowrap"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-              <span>影音健檢</span>
-            </button>
-
-            <button
               onClick={() => handleNavClick('contact')}
-              className="text-[11px] font-sans tracking-widest uppercase bg-stone-900 text-[#F6F4EE] px-3.5 py-1.5 rounded hover:bg-stone-800 transition-all shadow-sm whitespace-nowrap"
+              className="text-[11px] font-sans tracking-widest uppercase bg-stone-900 text-[#F6F4EE] px-4 py-2 rounded hover:bg-stone-800 transition-all shadow-sm whitespace-nowrap font-medium"
             >
-              BOOK / 預約
+              BOOK / 預約諮詢
             </button>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-3">
+          <div className="md:hidden flex items-center gap-2">
             <button
-              onClick={onOpenQuiz}
-              className="p-1.5 text-amber-800 border border-stone-300 rounded"
-              title="健檢測驗"
+              onClick={() => handleNavClick('contact')}
+              className="text-[10px] font-sans tracking-widest uppercase bg-stone-900 text-[#F6F4EE] px-2.5 py-1.5 rounded font-medium"
             >
-              <Sparkles className="w-4 h-4" />
+              預約
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -125,19 +116,10 @@ export const Header: React.FC<HeaderProps> = ({
             })}
           </div>
 
-          <div className="pt-2 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenQuiz();
-              }}
-              className="w-full text-center py-2 text-xs uppercase tracking-widest border border-stone-300 text-stone-800 rounded"
-            >
-              FILM QUIZ / 影音拍攝健檢
-            </button>
+          <div className="pt-2">
             <button
               onClick={() => handleNavClick('contact')}
-              className="w-full text-center py-2 text-xs uppercase tracking-widest bg-stone-900 text-[#F6F4EE] rounded"
+              className="w-full text-center py-2.5 text-xs uppercase tracking-widest bg-stone-900 text-[#F6F4EE] rounded font-bold"
             >
               CONTACT US / 預約諮詢
             </button>

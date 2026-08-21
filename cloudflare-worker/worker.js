@@ -306,9 +306,18 @@ async function handleGetContentFromKV(env) {
     }
 
     // 確保結構完整
+    const rawAssets = rawKVData.assets || DEFAULT_SITE_CONTENT.assets;
+    let logoUrl = rawAssets.logo || '/images/logo.svg';
+    if (logoUrl.includes('assets/images/image.jpeg') || logoUrl.endsWith('/image.jpeg')) {
+      logoUrl = '/images/logo.svg';
+    }
+
     const content = {
       siteInfo: rawKVData.siteInfo || DEFAULT_SITE_CONTENT.siteInfo,
-      assets: rawKVData.assets || DEFAULT_SITE_CONTENT.assets,
+      assets: {
+        ...rawAssets,
+        logo: logoUrl
+      },
       portfolio: Array.isArray(rawKVData.portfolio) && rawKVData.portfolio.length > 0
         ? rawKVData.portfolio
         : DEFAULT_INITIAL_PORTFOLIO

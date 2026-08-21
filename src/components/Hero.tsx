@@ -6,11 +6,11 @@ import { getYouTubeThumbnailUrl } from '../utils/youtube';
 
 interface HeroProps {
   onNavigate: (view: PageView) => void;
-  onOpenQuiz: () => void;
+  onOpenQuiz?: () => void;
   onPlayTrailer?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onNavigate, onOpenQuiz, onPlayTrailer }) => {
+export const Hero: React.FC<HeroProps> = ({ onNavigate, onPlayTrailer }) => {
   const { founderInfo, portfolio } = useSiteData();
 
   // Sort portfolio items by year (descending: newest first)

@@ -47,6 +47,22 @@ const DEFAULT_ASSETS: SiteAssets = {
   founderImage: '/images/avatar.svg'
 };
 
+// Helper function to sanitize and normalize brand logo URL
+function sanitizeLogo(logoUrl?: string): string {
+  if (!logoUrl) return '/images/logo.svg';
+  const trimmed = logoUrl.trim();
+  if (
+    !trimmed || 
+    trimmed === '/images/logo.svg' || 
+    trimmed.includes('cindimenswebsite1/main/assets/images/image.jpeg') || 
+    trimmed.includes('cindimenswebsite/main/assets/images/image.jpeg') ||
+    trimmed.endsWith('/image.jpeg')
+  ) {
+    return '/images/logo.svg';
+  }
+  return trimmed;
+}
+
 const DEFAULT_SITE_INFO: SiteMetaInfo = {
   title: '維度影學 Cine Dimension',
   tagline: 'Have Fun 享受創作 ｜ 用手機拍出真實的電影感',
@@ -87,7 +103,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [assets, setAssets] = useState<SiteAssets>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ASSETS);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...DEFAULT_ASSETS,
+          ...parsed,
+          logo: sanitizeLogo(parsed.logo)
+        };
+      }
     } catch (e) {}
     return DEFAULT_ASSETS;
   });
@@ -247,12 +270,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (rawData) {
       // A. Update Assets (Logo & Founder Avatar)
       if (rawData.assets) {
-        const newLogo = (rawData.assets.logo || '').trim();
+        const rawLogo = (rawData.assets.logo || '').trim();
+        const newLogo = sanitizeLogo(rawLogo);
         const newFounderImg = (rawData.assets.founderImage || rawData.assets.avatar || '').trim();
 
         setAssets(prev => ({
           ...prev,
-          logo: newLogo || prev.logo || '/images/logo.svg',
+          logo: newLogo,
           founderImage: newFounderImg || prev.founderImage || '/images/avatar.svg'
         }));
 

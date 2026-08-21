@@ -23,6 +23,12 @@ async function getRemoteGitHubContent() {
       if (res.ok) {
         const remoteData = await res.json();
         if (remoteData && (remoteData.portfolio || remoteData.assets || remoteData.siteInfo)) {
+          if (remoteData.assets) {
+            const rawLogo = (remoteData.assets.logo || '').trim();
+            if (!rawLogo || rawLogo.includes('assets/images/image.jpeg') || rawLogo.endsWith('/image.jpeg')) {
+              remoteData.assets.logo = '/images/logo.svg';
+            }
+          }
           inMemoryContentCache = remoteData;
           return { success: true, url, data: remoteData };
         }

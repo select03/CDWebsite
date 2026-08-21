@@ -5,10 +5,10 @@ import { ArrowRight, User, BookOpen, Film, Send, Sparkles } from 'lucide-react';
 
 interface HomeQuickPortalsProps {
   onNavigate: (view: PageView) => void;
-  onOpenQuiz: () => void;
+  onOpenQuiz?: () => void;
 }
 
-export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate, onOpenQuiz }) => {
+export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate }) => {
   const { founderInfo } = useSiteData();
 
   const portals = [
@@ -46,7 +46,7 @@ export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate, 
       id: 'contact' as PageView,
       category: 'COLLABORATION',
       title: 'CONTACT ｜ 預約諮詢與合作洽詢',
-      desc: '提供免費影音痛點健檢、機構內訓合作評估與商業影像顧問專案諮詢。',
+      desc: '提供影像創作痛點諮詢、機構內訓合作評估與商業影像顧問專案諮詢。',
       image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80',
       badge: '快速回覆諮詢',
       actionText: '立即線上諮詢',
@@ -115,25 +115,6 @@ export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate, 
               </div>
             </button>
           ))}
-        </div>
-
-        {/* Film Quiz Banner Strip */}
-        <div className="p-6 rounded-xl bg-[#D8E2DC] border border-stone-300 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="space-y-1 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-sans font-bold tracking-widest text-stone-700 uppercase">
-              <Sparkles className="w-4 h-4 text-amber-700" />
-              <span>零基礎不知道從何開始？</span>
-            </div>
-            <p className="text-xs sm:text-sm font-serif text-stone-800">
-              花費 30 秒完成「影音創作風格健檢」，獲得悟哥量身推薦的學習與器材路徑
-            </p>
-          </div>
-          <button
-            onClick={onOpenQuiz}
-            className="shrink-0 text-xs font-sans tracking-widest uppercase bg-stone-900 text-[#F6F4EE] px-5 py-2.5 rounded hover:bg-stone-800 transition-all shadow-sm font-bold"
-          >
-            START QUIZ / 開始 30 秒健檢
-          </button>
         </div>
 
       </div>
