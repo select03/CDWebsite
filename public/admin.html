@@ -468,11 +468,19 @@
                     <i data-lucide="upload" class="w-3.5 h-3.5"></i>
                     <span>選擇新圖片上傳</span>
                   </button>
+                  <button 
+                    onclick="resetToOfficialFounderImage()" 
+                    title="恢復創辦人官方形象照 (avatar.webp)"
+                    class="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-amber-400 font-medium flex items-center justify-center gap-1 transition-colors whitespace-nowrap"
+                  >
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                    <span>恢復官方照片</span>
+                  </button>
                 </div>
                 <input 
                   type="text" 
                   id="asset-url-founder" 
-                  placeholder="或直接輸入圖片 URL (https://...)" 
+                  placeholder="預設個人照: /images/avatar.webp" 
                   oninput="handleAssetUrlChange('founderImage', this.value)"
                   class="w-full px-3 py-1.5 bg-[#191d27] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
                 />
@@ -1446,6 +1454,18 @@
       markDirty();
       renderAssetsPanel();
       showToast('已恢復維度影學官方預設 SVG 向量 Logo！請點擊上方「一鍵發佈」保存', 'success');
+    }
+
+    function resetToOfficialFounderImage() {
+      if (!currentContent.assets) currentContent.assets = {};
+      currentContent.assets.founderImage = '/images/avatar.webp';
+      currentContent.assets.avatar = '/images/avatar.webp';
+      if (currentContent.founder) {
+        currentContent.founder.image = '/images/avatar.webp';
+      }
+      markDirty();
+      renderAssetsPanel();
+      showToast('已恢復創辦人官方形象照 (avatar.webp)！請點擊上方「一鍵發佈」保存', 'success');
     }
 
     function collectAssetsFromDOM() {

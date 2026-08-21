@@ -92,13 +92,13 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
             <div className="md:col-span-4">
               <div className="aspect-[3/4] rounded-xl overflow-hidden border border-stone-300 shadow-sm relative group bg-stone-200">
                 <img
-                  src={founderInfo.image || '/images/avatar.svg'}
+                  src={founderInfo.image || '/images/avatar.webp'}
                   alt={`${founderInfo.name}（${founderInfo.nickname}）`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    if (e.currentTarget.src !== '/images/avatar.svg') {
-                      e.currentTarget.src = '/images/avatar.svg';
+                    if (e.currentTarget.src !== '/images/avatar.webp') {
+                      e.currentTarget.src = '/images/avatar.webp';
                     }
                   }}
                 />

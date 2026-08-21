@@ -9,7 +9,7 @@ export const FOUNDER_INFO: FounderInfo = {
   shortBio: '我是吳政維（悟哥）。18 年前從 Maya 3D 建模與高壓婚禮紀錄踏入影像大門，如今結合手機隨手拍與 AI 工具創辦「維度影學」，受邀竹崎農會、苗栗總工會與大俠攝影教室講學，陪伴學員擺脫完美主義焦慮。',
   education: '18 年影視實戰與 AI 影像賦能導師',
   yearsOfExperience: 18,
-  image: FOUNDER_PORTRAIT_IMAGE,
+  image: '/images/avatar.webp',
   quote: '別讓完美主義偷走你開始的勇氣。\n技術可以被 AI 簡化\n但鏡頭下的溫度無法被取代。',
   taglines: ['先求有，再求好', 'Have Fun 享受創作', '用手機記錄真實的電影感'],
   socials: {

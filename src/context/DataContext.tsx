@@ -44,7 +44,7 @@ const STORAGE_KEYS = {
 
 const DEFAULT_ASSETS: SiteAssets = {
   logo: '/images/logo.svg',
-  founderImage: '/images/avatar.svg'
+  founderImage: '/images/avatar.webp'
 };
 
 // Helper function to sanitize and normalize brand logo URL
@@ -59,6 +59,21 @@ function sanitizeLogo(logoUrl?: string): string {
     trimmed.endsWith('/image.jpeg')
   ) {
     return '/images/logo.svg';
+  }
+  return trimmed;
+}
+
+// Helper function to sanitize and normalize founder avatar image URL
+function sanitizeFounderImage(imgUrl?: string): string {
+  if (!imgUrl) return '/images/avatar.webp';
+  const trimmed = imgUrl.trim();
+  if (
+    !trimmed ||
+    trimmed === '/images/avatar.svg' ||
+    trimmed.endsWith('/avatar.svg') ||
+    trimmed === '/images/avatar.webp'
+  ) {
+    return '/images/avatar.webp';
   }
   return trimmed;
 }
@@ -108,7 +123,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           ...DEFAULT_ASSETS,
           ...parsed,
-          logo: sanitizeLogo(parsed.logo)
+          logo: sanitizeLogo(parsed.logo),
+          founderImage: sanitizeFounderImage(parsed.founderImage || parsed.avatar)
         };
       }
     } catch (e) {}
@@ -272,12 +288,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (rawData.assets) {
         const rawLogo = (rawData.assets.logo || '').trim();
         const newLogo = sanitizeLogo(rawLogo);
-        const newFounderImg = (rawData.assets.founderImage || rawData.assets.avatar || '').trim();
+        const rawFounderImg = (rawData.assets.founderImage || rawData.assets.avatar || '').trim();
+        const newFounderImg = sanitizeFounderImage(rawFounderImg);
 
         setAssets(prev => ({
           ...prev,
           logo: newLogo,
-          founderImage: newFounderImg || prev.founderImage || '/images/avatar.svg'
+          founderImage: newFounderImg
         }));
 
         if (newFounderImg) {

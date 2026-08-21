@@ -132,7 +132,7 @@ const DEFAULT_SITE_CONTENT = {
   },
   assets: {
     logo: "/images/logo.svg",
-    founderImage: "/images/avatar.svg",
+    founderImage: "/images/avatar.webp",
     bannerImage: ""
   },
   portfolio: DEFAULT_INITIAL_PORTFOLIO
