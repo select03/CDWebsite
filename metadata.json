@@ -1,0 +1,6 @@
+{
+  "name": "CineDimension",
+  "description": "維度影學 Cine Dimension 官方網站，提供手機電影感攝影、AI 影音速成課程、企業影音培訓與商業拍攝作品展覽。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

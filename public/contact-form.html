@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>維度影學 CineDimension ｜ 預約聯繫與需求諮詢</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Cloudflare Turnstile API -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Noto Serif TC', serif;
+      background-color: #F6F4EE;
+      color: #1c1917;
+    }
+    .font-sans-custom {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+
+  <div class="max-w-5xl w-full mx-auto space-y-10">
+    
+    <!-- Header -->
+    <div class="text-center space-y-3">
+      <span class="text-xs font-sans-custom tracking-[0.3em] text-stone-500 uppercase font-bold block">
+        CONTACT & CONSULTATION
+      </span>
+      <h1 class="text-2xl sm:text-4xl font-bold text-stone-900 tracking-wider">
+        CONTACT ｜ 預約聯繫與需求諮詢
+      </h1>
+      <p class="text-xs sm:text-sm text-stone-600 max-w-xl mx-auto leading-relaxed">
+        無論是手機電影感系統課、AI 影音速成訓練營或企業在地內訓工作坊，填寫下方需求單，我們將於 24 小時內由悟哥團隊親自與您聯繫。
+      </p>
+    </div>
+
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+      
+      <!-- Left Info Box -->
+      <div class="md:col-span-5 space-y-6">
+        <div class="p-6 rounded-2xl bg-[#EFECE6] border border-stone-300 space-y-6 shadow-sm">
+          
+          <div class="space-y-3">
+            <h3 class="text-lg font-bold text-stone-900 border-b border-stone-300 pb-2">
+              官方聯絡管道
+            </h3>
+            <div class="space-y-3 text-xs font-sans-custom text-stone-700">
+              <p class="flex items-center gap-2.5">
+                <i data-lucide="mail" class="w-4 h-4 text-stone-600"></i>
+                <span class="font-bold text-stone-900">Email:</span>
+                <a href="mailto:wuge.cinedimension@gmail.com" class="text-stone-800 hover:underline">wuge.cinedimension@gmail.com</a>
+              </p>
+              <p class="flex items-center gap-2.5">
+                <i data-lucide="globe" class="w-4 h-4 text-stone-600"></i>
+                <span class="font-bold text-stone-900">Website:</span>
+                <a href="https://cine-dimension.com" target="_blank" class="text-stone-800 hover:underline">www.cine-dimension.com</a>
+              </p>
+              <p class="flex items-center gap-2.5">
+                <i data-lucide="youtube" class="w-4 h-4 text-stone-600"></i>
+                <span class="font-bold text-stone-900">YouTube:</span>
+                <a href="https://www.youtube.com/@cinedimens" target="_blank" class="text-stone-800 hover:underline">@cinedimens</a>
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-stone-300 space-y-3 text-xs font-sans-custom">
+            <h4 class="font-bold text-stone-900 flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-4 h-4 text-amber-800"></i>
+              <span>諮詢須知與流程</span>
+            </h4>
+            <ul class="space-y-2 text-stone-600 text-[11px] leading-relaxed list-disc list-inside">
+              <li><strong class="text-stone-800">24 小時快速回覆：</strong>送出需求單後，悟哥團隊將立即收到 Telegram 即時推播並主動與您聯繫。</li>
+              <li><strong class="text-stone-800">客製化大綱評估：</strong>可針對企業或農會學員器材與基礎調整授課主題。</li>
+              <li><strong class="text-stone-800">個資保密承諾：</strong>所有聯絡資料僅供諮詢評估使用，絕不外流。</li>
+            </ul>
+          </div>
+
+          <!-- Security Badge -->
+          <div class="p-3.5 bg-stone-200/90 rounded-xl border border-stone-300 text-[11px] font-sans-custom text-stone-700 flex items-start gap-2.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-700 shrink-0 mt-0.5"></i>
+            <div class="space-y-0.5">
+              <p class="font-bold text-stone-900">Cloudflare Turnstile 智慧防護</p>
+              <p class="text-stone-600 text-[10px] leading-tight">採用全自動智慧無感驗證與加密傳輸，防範惡意機器人與垃圾郵件干擾。</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right Form Box -->
+      <div class="md:col-span-7">
+        <div class="p-6 sm:p-8 rounded-2xl bg-[#EFECE6] border border-stone-300 shadow-sm relative">
+          
+          <!-- Form Element -->
+          <form id="contactForm" class="space-y-4 text-left font-sans-custom text-xs">
+            <h3 class="text-lg font-serif font-bold text-stone-900 mb-2">填寫需求單據</h3>
+
+            <div id="errorAlert" class="hidden p-3 rounded-xl bg-red-100 border border-red-300 text-red-900 flex items-center gap-2">
+              <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+              <span id="errorMessage"></span>
+            </div>
+
+            <!-- Honeypot Invisible Trap -->
+            <div style="display: none; position: absolute; left: -9999px;" aria-hidden="true">
+              <input type="text" name="hp_website" id="hp_website" tabindex="-1" autocomplete="off">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-stone-800 mb-1">姓名 / 稱呼 <span class="text-amber-800">*</span></label>
+                <input type="text" id="name" required placeholder="例：悟哥 / 王小明" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800">
+              </div>
+
+              <div>
+                <label class="block font-bold text-stone-800 mb-1">電子郵件 Email <span class="text-amber-800">*</span></label>
+                <input type="email" id="email" required placeholder="name@example.com" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-stone-800 mb-1">聯絡電話 Phone <span class="text-amber-800">*</span></label>
+                <input type="tel" id="phone" required placeholder="0912-345-678" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800">
+              </div>
+
+              <div>
+                <label class="block font-bold text-stone-800 mb-1">單位 / 品牌名稱（選填）</label>
+                <input type="text" id="organization" placeholder="例：嘉義竹崎農會 / 個人工作室" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-stone-800 mb-1">意向諮詢服務項目 <span class="text-amber-800">*</span></label>
+              <select id="serviceType" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 focus:outline-none focus:border-stone-800">
+                <option value="《維度影學：手機拍出電影感》系統課">《維度影學：手機拍出電影感》系統課</option>
+                <option value="《AI 輔助動態影音速成訓練營》">《AI 輔助動態影音速成訓練營》</option>
+                <option value="嘉義農會與企業在地影音內訓工作坊">嘉義農會與企業在地影音內訓工作坊</option>
+                <option value="商業影像顧問與客製大片拍攝">商業影像顧問與客製大片拍攝</option>
+                <option value="創作者與個人品牌一對一導師">創作者與個人品牌一對一導師</option>
+                <option value="其他演講與客製合作邀請">其他演講與客製合作邀請</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-stone-800 mb-1">預算範圍</label>
+                <select id="budgetRange" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 focus:outline-none focus:border-stone-800">
+                  <option value="NT$ 5,000 - 10,000 （個人課程/訓練營）">NT$ 5,000 - 10,000 （個人課程/訓練營）</option>
+                  <option value="NT$ 10,000 - 30,000 （進階班/一對一）" selected>NT$ 10,000 - 30,000 （進階班/一對一）</option>
+                  <option value="NT$ 30,000 - 80,000 （農會/企業內訓）">NT$ 30,000 - 80,000 （農會/企業內訓）</option>
+                  <option value="NT$ 80,000+ （商業拍攝與品牌顧問）">NT$ 80,000+ （商業拍攝與品牌顧問）</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-stone-800 mb-1">期望時間</label>
+                <input type="text" id="preferredTime" placeholder="例：一個月內 / 隨時" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-stone-800 mb-1">需求詳細說明 / 想對悟哥說的話 <span class="text-amber-800">*</span></label>
+              <textarea id="message" rows="3" required placeholder="請簡單描述您目前在拍攝或企劃上遇到的痛點、學員人數，或專案目標..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800"></textarea>
+            </div>
+
+            <!-- Turnstile Widget Container -->
+            <div class="pt-1 flex items-center justify-between">
+              <div class="cf-turnstile" data-sitekey="0x4AAAAAAAx_mock_or_real_key" data-callback="onTurnstileSuccess"></div>
+              <div class="flex items-center gap-1.5 text-stone-500 text-[11px]">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>Cloudflare SSL & Anti-Spam</span>
+              </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full py-3.5 px-6 rounded-xl bg-stone-900 hover:bg-stone-800 active:scale-[0.99] text-[#F6F4EE] font-serif font-bold text-sm tracking-widest uppercase transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span>確認送出預約諮詢單</span>
+            </button>
+          </form>
+
+          <!-- Success Banner Container -->
+          <div id="successBanner" class="hidden text-center space-y-6 py-6 font-serif">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center mx-auto shadow-sm">
+              <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="text-2xl font-bold text-stone-900">預約需求單已成功送出！</h3>
+              <p class="text-xs font-sans-custom text-stone-600 max-w-sm mx-auto leading-relaxed">
+                悟哥與維度影學團隊已透過 Telegram 即時收到您的諮詢通知，我們將於 24 小時內透過電話或 Email 親自與您聯繫。
+              </p>
+            </div>
+
+            <div class="p-4 bg-stone-200/80 border border-stone-300 rounded-xl text-left text-xs font-sans-custom space-y-2">
+              <p class="font-bold text-stone-900 border-b border-stone-300 pb-1.5 flex items-center justify-between">
+                <span>單據內容摘要</span>
+                <span class="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md font-normal">已即時推播</span>
+              </p>
+              <div id="summaryContent" class="grid grid-cols-2 gap-1 text-[11px] text-stone-700"></div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 font-sans-custom">
+              <button onclick="copySummary()" id="copyBtn" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-900 text-xs font-semibold border border-stone-300 flex items-center justify-center gap-1.5 transition-all">
+                <i data-lucide="copy" class="w-3.5 h-3.5 text-stone-700"></i>
+                <span>複製單據備忘</span>
+              </button>
+
+              <button onclick="resetForm()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-[#F6F4EE] text-xs font-bold transition-all">
+                填寫下一份單據
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let turnstileToken = 'mock_turnstile_success';
+    function onTurnstileSuccess(token) {
+      turnstileToken = token;
+    }
+
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorAlert = document.getElementById('errorAlert');
+    const errorMessage = document.getElementById('errorMessage');
+    const successBanner = document.getElementById('successBanner');
+    let lastSummaryText = '';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorAlert.classList.add('hidden');
+
+      const hp = document.getElementById('hp_website').value;
+      if (hp && hp.trim().length > 0) {
+        // Honeypot trapped
+        form.classList.add('hidden');
+        successBanner.classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        organization: document.getElementById('organization').value.trim(),
+        serviceType: document.getElementById('serviceType').value,
+        budgetRange: document.getElementById('budgetRange').value,
+        preferredTime: document.getElementById('preferredTime').value.trim(),
+        message: document.getElementById('message').value.trim(),
+        turnstileToken: turnstileToken || 'mock_turnstile_success'
+      };
+
+      if (!payload.name || !payload.email || !payload.phone || !payload.message) {
+        showError('請完整填寫姓名、Email、聯絡電話與需求說明');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span>安全傳輸與通知發送中...</span>`;
+
+      try {
+        const res = await fetch('/api/submit-form', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          lastSummaryText = `【維度影學 預約諮詢單據】\n姓名：${payload.name}\nEmail：${payload.email}\n電話：${payload.phone}\n單位：${payload.organization || '個人'}\n意向項目：${payload.serviceType}\n預算範圍：${payload.budgetRange}\n期望時間：${payload.preferredTime}\n需求說明：${payload.message}`;
+          
+          document.getElementById('summaryContent').innerHTML = `
+            <div><span class="text-stone-500">稱呼：</span>${escapeHTML(payload.name)}</div>
+            <div><span class="text-stone-500">電話：</span>${escapeHTML(payload.phone)}</div>
+            <div class="col-span-2"><span class="text-stone-500">意向：</span>${escapeHTML(payload.serviceType)}</div>
+            <div class="col-span-2"><span class="text-stone-500">預算：</span>${escapeHTML(payload.budgetRange)}</div>
+          `;
+
+          form.classList.add('hidden');
+          successBanner.classList.remove('hidden');
+          lucide.createIcons();
+        } else {
+          showError(data.error || '預約單送出失敗，請稍後再試。');
+        }
+      } catch (err) {
+        showError('網路連線逾時，請檢查網路連線或稍後再試。');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i><span>確認送出預約諮詢單</span>`;
+        lucide.createIcons();
+      }
+    });
+
+    function showError(msg) {
+      errorMessage.innerText = msg;
+      errorAlert.classList.remove('hidden');
+    }
+
+    function copySummary() {
+      if (lastSummaryText) {
+        navigator.clipboard.writeText(lastSummaryText);
+        const btn = document.getElementById('copyBtn');
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-700"></i><span class="text-emerald-800 font-bold">已複製備忘！</span>`;
+        lucide.createIcons();
+        setTimeout(() => {
+          btn.innerHTML = `<i data-lucide="copy" class="w-3.5 h-3.5 text-stone-700"></i><span>複製單據備忘</span>`;
+          lucide.createIcons();
+        }, 3000);
+      }
+    }
+
+    function resetForm() {
+      form.reset();
+      successBanner.classList.add('hidden');
+      form.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

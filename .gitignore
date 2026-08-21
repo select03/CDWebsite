@@ -1,0 +1,16 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Dynamic Content Data (Managed exclusively by CMS / Cloudflare Worker / GitHub, not by AI Studio commits)
+content.json
+public/content.json
+**/content.json
+*content*.json
+content-*.json
+
