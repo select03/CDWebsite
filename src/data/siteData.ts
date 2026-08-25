@@ -1,6 +1,5 @@
 import { FounderInfo, ServiceItem, PortfolioItem, Testimonial } from '../types';
-import { SHELL_APP_GUIDE_THUMBNAIL } from './shellThumbnail';
-import { FOUNDER_PORTRAIT_IMAGE } from './founderImage';
+import { STATIC_ASSETS } from '../constants/assets';
 
 export const FOUNDER_INFO: FounderInfo = {
   name: '吳政維',
@@ -9,7 +8,7 @@ export const FOUNDER_INFO: FounderInfo = {
   shortBio: '我是吳政維（悟哥）。18 年前從 Maya 3D 建模與高壓婚禮紀錄踏入影像大門，如今結合手機隨手拍與 AI 工具創辦「維度影學」，受邀竹崎農會、苗栗總工會與大俠攝影教室講學，陪伴學員擺脫完美主義焦慮。',
   education: '18 年影視實戰與 AI 影像賦能導師',
   yearsOfExperience: 18,
-  image: '/images/avatar.webp',
+  image: STATIC_ASSETS.AVATAR,
   quote: '別讓完美主義偷走你開始的勇氣。\n技術可以被 AI 簡化\n但鏡頭下的溫度無法被取代。',
   taglines: ['先求有，再求好', 'Have Fun 享受創作', '用手機記錄真實的電影感'],
   socials: {
@@ -404,7 +403,7 @@ export const PORTFOLIO_CASES: PortfolioItem[] = [
     description: '為全球潤滑油領導品牌 Shell 喜力汽車量身打造「車輛保修 App 官方操作與情境指南」。透過車主保養實境與清晰流暢的 App 介面操作演示，將繁複的預約維修、履歷查詢與保養檢測流程轉化為直覺易懂的影像語言，有效降低車主操作門檻，引導用戶精準掌握 App 核心功能，全面提升品牌數位服務體驗與滿意度。',
     role: '動態導演 / 商業動態攝影 / 介面情境演示指導',
     tags: ['商業形象片', 'App操作指南', '情境演示', '保修實境', '降低學習門檻'],
-    image: SHELL_APP_GUIDE_THUMBNAIL,
+    image: STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL,
     highlights: [
       '實境操作無縫結合：將保修廠情境與手機 App 介面無縫串聯，讓車主一目了然各項維修保養功能',
       '降低學習門檻：以電影感光影與精準節奏演示，將複雜的工具型 App 轉化為生動直覺的導覽體驗'

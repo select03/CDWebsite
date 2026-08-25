@@ -1,6 +1,7 @@
 import React from 'react';
 import { PageView, PortfolioItem } from '../types';
 import { useSiteData } from '../context/DataContext';
+import { STATIC_ASSETS } from '../constants/assets';
 import { Play, ArrowRight, Sparkles, ExternalLink, Film, Eye } from 'lucide-react';
 import { getYouTubeThumbnailUrl } from '../utils/youtube';
 
@@ -157,7 +158,7 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate, onPlayTrailer }) => {
                 >
                   <div className="aspect-[16/10] bg-stone-200 rounded-lg overflow-hidden shadow-md relative border border-stone-300">
                     <img
-                      src={item.image || getYouTubeThumbnailUrl(item.videoUrl) || ''}
+                      src={item.image || getYouTubeThumbnailUrl(item.videoUrl) || STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
@@ -165,8 +166,8 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate, onPlayTrailer }) => {
                         const ytThumb = getYouTubeThumbnailUrl(item.videoUrl);
                         if (ytThumb && e.currentTarget.src !== ytThumb) {
                           e.currentTarget.src = ytThumb;
-                        } else if (item.id === 'shell-lubricants-ad' || item.title.includes('Shell') || item.title.includes('喜力')) {
-                          e.currentTarget.src = '/images/shell.svg';
+                        } else if (e.currentTarget.src !== STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL) {
+                          e.currentTarget.src = STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL;
                         }
                       }}
                     />

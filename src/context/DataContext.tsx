@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { FounderInfo, ServiceItem, PortfolioItem, Testimonial, InquiryLead, SiteAssets, SiteMetaInfo } from '../types';
 import { FOUNDER_INFO, SERVICES_CATALOG, PORTFOLIO_CASES, TESTIMONIALS } from '../data/siteData';
+import { STATIC_ASSETS } from '../constants/assets';
 
 export interface DataContextType {
   assets: SiteAssets;
@@ -43,39 +44,18 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_ASSETS: SiteAssets = {
-  logo: '/images/logo.svg',
-  founderImage: '/images/avatar.webp'
+  logo: STATIC_ASSETS.LOGO,
+  founderImage: STATIC_ASSETS.AVATAR
 };
 
-// Helper function to sanitize and normalize brand logo URL
+// Helper function to sanitize and normalize brand logo URL (strictly locked to /images/logo.svg)
 function sanitizeLogo(logoUrl?: string): string {
-  if (!logoUrl) return '/images/logo.svg';
-  const trimmed = logoUrl.trim();
-  if (
-    !trimmed || 
-    trimmed === '/images/logo.svg' || 
-    trimmed.includes('cindimenswebsite1/main/assets/images/image.jpeg') || 
-    trimmed.includes('cindimenswebsite/main/assets/images/image.jpeg') ||
-    trimmed.endsWith('/image.jpeg')
-  ) {
-    return '/images/logo.svg';
-  }
-  return trimmed;
+  return STATIC_ASSETS.LOGO;
 }
 
-// Helper function to sanitize and normalize founder avatar image URL
+// Helper function to sanitize and normalize founder avatar image URL (strictly locked to /images/avatar.webp)
 function sanitizeFounderImage(imgUrl?: string): string {
-  if (!imgUrl) return '/images/avatar.webp';
-  const trimmed = imgUrl.trim();
-  if (
-    !trimmed ||
-    trimmed === '/images/avatar.svg' ||
-    trimmed.endsWith('/avatar.svg') ||
-    trimmed === '/images/avatar.webp'
-  ) {
-    return '/images/avatar.webp';
-  }
-  return trimmed;
+  return STATIC_ASSETS.AVATAR;
 }
 
 const DEFAULT_SITE_INFO: SiteMetaInfo = {
@@ -103,7 +83,7 @@ function mergePortfolioWithDefaults(remoteList: any[], defaultList: PortfolioIte
     description: item.description || '',
     role: item.role || '導演 / 攝影師',
     tags: Array.isArray(item.tags) ? item.tags : ['手機攝影', '電影感視覺'],
-    image: item.image || item.imageUrl || '/images/shell.svg',
+    image: item.image || item.imageUrl || STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL,
     videoUrl: item.videoUrl || '',
     highlights: Array.isArray(item.highlights) ? item.highlights : []
   }));

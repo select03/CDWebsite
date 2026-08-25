@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSiteData } from '../context/DataContext';
 import { PortfolioItem } from '../types';
+import { STATIC_ASSETS } from '../constants/assets';
 import { Play, Check, X, ExternalLink, Video, Eye, Image as ImageIcon } from 'lucide-react';
 import { getYouTubeThumbnailUrl, getYouTubeEmbedUrl } from '../utils/youtube';
 
@@ -60,7 +61,7 @@ export const PortfolioShowcase: React.FC = () => {
                 {/* Image */}
                 <div className="relative aspect-[16/10] bg-stone-300 overflow-hidden">
                   <img
-                    src={item.image || getYouTubeThumbnailUrl(item.videoUrl) || ''}
+                    src={item.image || getYouTubeThumbnailUrl(item.videoUrl) || STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL}
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
@@ -68,8 +69,8 @@ export const PortfolioShowcase: React.FC = () => {
                       const ytThumb = getYouTubeThumbnailUrl(item.videoUrl);
                       if (ytThumb && e.currentTarget.src !== ytThumb) {
                         e.currentTarget.src = ytThumb;
-                      } else if (item.id === 'shell-lubricants-ad' || item.title.includes('Shell') || item.title.includes('喜力')) {
-                        e.currentTarget.src = '/images/shell.svg';
+                      } else if (e.currentTarget.src !== STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL) {
+                        e.currentTarget.src = STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL;
                       }
                     }}
                   />
@@ -180,13 +181,13 @@ export const PortfolioShowcase: React.FC = () => {
             ) : (
               <div className="aspect-video rounded overflow-hidden mb-4 border border-stone-300 bg-stone-200">
                 <img
-                  src={selectedCase.image || '/images/shell.svg'}
+                  src={selectedCase.image || STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL}
                   alt={selectedCase.title}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    if (selectedCase.id === 'shell-lubricants-ad' || selectedCase.title.includes('Shell')) {
-                      e.currentTarget.src = '/images/shell.svg';
+                    if (e.currentTarget.src !== STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL) {
+                      e.currentTarget.src = STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL;
                     }
                   }}
                 />

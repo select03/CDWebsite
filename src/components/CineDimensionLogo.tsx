@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSiteData } from '../context/DataContext';
+import { STATIC_ASSETS } from '../constants/assets';
 
 interface CineDimensionLogoProps {
   className?: string;
@@ -13,18 +13,10 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
   className = '',
   size = 'md',
   showText = true,
-  customLogo,
 }) => {
-  const { assets } = useSiteData();
+  // 全域死鎖 Logo 來源為 /images/logo.svg，徹底跳過外部動態覆蓋
+  const activeLogo = STATIC_ASSETS.LOGO;
   const [imageError, setImageError] = useState(false);
-
-  const activeLogo = customLogo || assets?.logo;
-  const isDefaultSvgLogo = !activeLogo || activeLogo === '/images/logo.svg' || activeLogo.endsWith('logo.svg');
-
-  // Reset image error state whenever activeLogo changes
-  React.useEffect(() => {
-    setImageError(false);
-  }, [activeLogo]);
 
   // Sizing mappings
   const iconSizeClasses = {
@@ -50,11 +42,11 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-2.5 select-none shrink-0 min-w-max ${className}`}>
-      {/* Brand Icon or Custom Uploaded Logo */}
+      {/* Brand Icon (Deadlocked to /images/logo.svg with SVG fallback) */}
       <div className={`relative flex items-center justify-center shrink-0 ${iconSizeClasses[size]}`}>
-        {!isDefaultSvgLogo && activeLogo && !imageError ? (
+        {!imageError ? (
           <img
-            src={activeLogo}
+            src={STATIC_ASSETS.LOGO}
             alt="維度影學 Cine Dimension"
             className="w-full h-full object-contain drop-shadow-sm"
             onError={() => setImageError(true)}

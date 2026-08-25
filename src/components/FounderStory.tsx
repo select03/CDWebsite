@@ -3,6 +3,7 @@ import { FOUNDER_MILESTONES, AUDIENCE_PAIN_POINTS, FOUNDER_QUALIFICATIONS_DATA }
 import { useSiteData } from '../context/DataContext';
 import { PageView } from '../types';
 import { CineDimensionLogo } from './CineDimensionLogo';
+import { STATIC_ASSETS } from '../constants/assets';
 import { Camera, Video, Smartphone, Award, Sparkles, ArrowRight, BookOpen, Layers, Briefcase, Bot, Film, CheckCircle2 } from 'lucide-react';
 
 interface FounderStoryProps {
@@ -53,7 +54,7 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
         <div className="mb-10 p-6 sm:p-8 rounded-2xl bg-[#EFECE6] border border-stone-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-[#F6F4EE] border border-stone-300 p-3 shadow-sm flex items-center justify-center shrink-0">
-              <CineDimensionLogo size="xl" showText={false} customLogo={assets?.logo || '/images/logo.svg'} />
+              <CineDimensionLogo size="xl" showText={false} customLogo={STATIC_ASSETS.LOGO} />
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
@@ -88,17 +89,17 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
         <div className="mb-14 p-6 sm:p-8 rounded-2xl bg-[#EFECE6] border border-stone-300 shadow-sm relative">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             
-            {/* Image Column */}
+            {/* Image Column (Deadlocked to STATIC_ASSETS.AVATAR) */}
             <div className="md:col-span-4">
               <div className="aspect-[3/4] rounded-xl overflow-hidden border border-stone-300 shadow-sm relative group bg-stone-200">
                 <img
-                  src={founderInfo.image || '/images/avatar.webp'}
+                  src={STATIC_ASSETS.AVATAR}
                   alt={`${founderInfo.name}（${founderInfo.nickname}）`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    if (e.currentTarget.src !== '/images/avatar.webp') {
-                      e.currentTarget.src = '/images/avatar.webp';
+                    if (e.currentTarget.src !== STATIC_ASSETS.AVATAR) {
+                      e.currentTarget.src = STATIC_ASSETS.AVATAR;
                     }
                   }}
                 />
