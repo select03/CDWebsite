@@ -10,14 +10,12 @@ import { PortfolioShowcase } from './components/PortfolioShowcase';
 import { Testimonials } from './components/Testimonials';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
-import { FilmQuizModal } from './components/FilmQuizModal';
 import { VideoTrailerModal } from './components/VideoTrailerModal';
 import { HomeQuickPortals } from './components/HomeQuickPortals';
 import { AdminCMS } from './components/AdminCMS';
 
 function MainAppContent() {
   const [currentView, setCurrentView] = useState<PageView>('home');
-  const [isQuizOpen, setIsQuizOpen] = useState<boolean>(false);
   const [isTrailerOpen, setIsTrailerOpen] = useState<boolean>(false);
   const [preselectedService, setPreselectedService] = useState<string>('');
   const { isSyncingRemote } = useData();
@@ -153,12 +151,6 @@ function MainAppContent() {
       <Footer onNavigate={handleNavigate} />
 
       {/* Interactive Modals */}
-      <FilmQuizModal
-        isOpen={isQuizOpen}
-        onClose={() => setIsQuizOpen(false)}
-        onSelectServiceForContact={handleSelectServiceForContact}
-      />
-
       <VideoTrailerModal
         isOpen={isTrailerOpen}
         onClose={() => setIsTrailerOpen(false)}

@@ -7,7 +7,6 @@ import { getYouTubeThumbnailUrl } from '../utils/youtube';
 
 interface HeroProps {
   onNavigate: (view: PageView) => void;
-  onOpenQuiz?: () => void;
   onPlayTrailer?: () => void;
 }
 

@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { PageView } from '../types';
 import { CineDimensionLogo } from './CineDimensionLogo';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 interface HeaderProps {
   currentView: PageView;
   onNavigate: (view: PageView) => void;
-  onOpenQuiz?: () => void;
   onSelectServiceForContact?: (serviceTitle: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentView,
-  onNavigate,
-  onOpenQuiz
+  onNavigate
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

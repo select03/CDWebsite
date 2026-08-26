@@ -1,11 +1,10 @@
 import React from 'react';
 import { PageView } from '../types';
 import { useSiteData } from '../context/DataContext';
-import { ArrowRight, User, BookOpen, Film, Send, Sparkles } from 'lucide-react';
+import { ArrowRight, User, BookOpen, Film, Send } from 'lucide-react';
 
 interface HomeQuickPortalsProps {
   onNavigate: (view: PageView) => void;
-  onOpenQuiz?: () => void;
 }
 
 export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate }) => {
