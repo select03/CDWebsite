@@ -14,7 +14,10 @@ import {
   Facebook,
   AlertCircle, 
   Sparkles,
-  Check
+  Check,
+  ExternalLink,
+  GraduationCap,
+  Download
 } from 'lucide-react';
 
 interface ContactSectionProps {
@@ -248,6 +251,15 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   </p>
 
                   <p className="flex items-center gap-3">
+                    <GraduationCap className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span className="font-bold text-stone-900 min-w-[70px]">Portaly：</span>
+                    <a href="https://portaly.cc/cinedimension" target="_blank" rel="noopener noreferrer" className="text-amber-900 hover:text-amber-950 font-bold hover:underline inline-flex items-center gap-1">
+                      <span>portaly.cc/cinedimension</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+
+                  <p className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-stone-600 shrink-0" />
                     <span className="font-bold text-stone-900 min-w-[70px]">Contact：</span>
                     <a href="mailto:hi@cine-dimension.com" className="text-stone-900 hover:underline font-medium">
@@ -271,6 +283,30 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     </a>
                   </p>
                 </div>
+              </div>
+
+              {/* Portaly Online Learning Box */}
+              <div className="p-4 sm:p-5 rounded-xl bg-[#F6F4EE] border border-amber-300/80 space-y-2.5 text-xs sm:text-sm font-sans text-stone-800 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-stone-900 flex items-center gap-1.5 text-xs">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                    <span>線上課程與免費資源下載</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold">即刻獲取</span>
+                </div>
+                <p className="text-xs text-stone-600 font-serif leading-relaxed">
+                  想要自主研讀個人線上系統課，或直接免費領取悟哥整理的 AI 影音 Prompt 秘笈與工具包？歡迎點擊前往 Portaly 傳送門！
+                </p>
+                <a
+                  href="https://portaly.cc/cinedimension"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2 px-3 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-sans text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>進入悟哥 Portaly 傳送門</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
 
               {/* Brand Philosophy Card */}

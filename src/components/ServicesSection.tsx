@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSiteData } from '../context/DataContext';
 import { ServiceItem, PageView } from '../types';
 import { CourseDetailModal } from './CourseDetailModal';
-import { Clock, Video, ArrowRight, CheckCircle2, BookOpen } from 'lucide-react';
+import { Clock, Video, ArrowRight, CheckCircle2, BookOpen, Sparkles, Download, ExternalLink, GraduationCap } from 'lucide-react';
 
 interface ServicesSectionProps {
   onNavigate: (view: PageView) => void;
@@ -153,6 +153,34 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
 
             </div>
           ))}
+        </div>
+
+        {/* Portaly Online Course & Free Resources Portal Banner */}
+        <div className="mb-8 p-6 sm:p-7 rounded-2xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#F6F4EE] border border-stone-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 text-left">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-sans font-bold border border-amber-500/30 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-300" />
+                ONLINE COURSES & FREE RESOURCES
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-serif font-bold text-white">
+              尋找個人線上系統課，或免費領取 AI 影音 Prompt 秘笈與學習資源？
+            </h3>
+            <p className="text-xs font-serif text-stone-300 max-w-2xl leading-relaxed">
+              悟哥已將精選線上課程單元、免費 Prompt 指南與手機實戰工具包整理於 Portaly 傳送門，支援線上隨選隨看與即刻下載！
+            </p>
+          </div>
+          <a
+            href="https://portaly.cc/cinedimension"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-2 transition-colors group cursor-pointer shadow-xs"
+          >
+            <Download className="w-4 h-4 text-amber-200" />
+            <span>前往 Portaly 傳送門</span>
+            <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </a>
         </div>
 
         {/* Custom Customization Banner */}

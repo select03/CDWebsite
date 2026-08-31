@@ -1,6 +1,7 @@
 import React from 'react';
 import { PageView } from '../types';
 import { useSiteData } from '../context/DataContext';
+import { FounderAvatar } from './FounderAvatar';
 import { ArrowRight, User, BookOpen, Film, Send } from 'lucide-react';
 
 interface HomeQuickPortalsProps {
@@ -80,12 +81,20 @@ export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate }
             >
               {/* Image Banner */}
               <div className="relative aspect-[16/10] overflow-hidden bg-stone-200">
-                <img
-                  src={portal.image}
-                  alt={portal.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
+                {portal.id === 'about' ? (
+                  <FounderAvatar
+                    src={portal.image}
+                    alt={portal.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <img
+                    src={portal.image}
+                    alt={portal.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                  />
+                )}
                 <div className="absolute inset-0 bg-stone-950/20 group-hover:bg-stone-950/10 transition-colors" />
                 <span className="absolute top-2.5 left-2.5 bg-[#F6F4EE]/90 backdrop-blur-sm text-stone-900 text-[10px] font-sans px-2 py-0.5 rounded font-medium border border-stone-300">
                   {portal.badge}

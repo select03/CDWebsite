@@ -6,11 +6,18 @@
 export const STATIC_ASSETS = {
   /** 品牌 Logo 向量圖檔 */
   LOGO: '/images/logo.svg',
-  /** 個人大頭照 Avatar (BIO / 創辦人簡介) */
-  AVATAR: '/images/avatar.webp',
+  /** 個人大頭照 Avatar (預設連結至 avatar.jpeg，支援 jpeg/jpg/png/webp) */
+  AVATAR: '/images/avatar.jpeg',
   /** 作品集預設縮圖與 Fallback 封面圖 (Portfolio Thumbnail) */
   PORTFOLIO_FALLBACK_THUMBNAIL: '/images/shell.png',
 } as const;
+
+export const AVATAR_FALLBACK_CANDIDATES = [
+  '/images/avatar.jpeg',
+  '/images/avatar.jpg',
+  '/images/avatar.png',
+  '/images/avatar.webp'
+] as const;
 
 export const BRAND_LOGO_SRC = STATIC_ASSETS.LOGO;
 export const FOUNDER_AVATAR_SRC = STATIC_ASSETS.AVATAR;

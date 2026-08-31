@@ -69,6 +69,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <h4 className="font-bold text-stone-900 uppercase tracking-widest text-[11px]">CHANNELS ｜ 官方管道</h4>
             <div className="space-y-1.5 text-stone-600">
               <p>• 官網：<a href={founderInfo.socials.website} target="_blank" rel="noopener noreferrer" className="text-stone-900 underline">cine-dimension.com</a></p>
+              <p>• Portaly 傳送門：<a href={founderInfo.socials.portaly || 'https://portaly.cc/cinedimension'} target="_blank" rel="noopener noreferrer" className="text-amber-900 font-bold hover:underline">portaly.cc/cinedimension</a>（線上課/免費資源）</p>
               <p>• Contact：<a href={`mailto:${founderInfo.socials.email}`} className="text-stone-900 font-medium hover:underline">{founderInfo.socials.email}</a></p>
               <p>• YouTube：<a href="https://www.youtube.com/@cinedimens" target="_blank" rel="noopener noreferrer" className="text-stone-900 hover:underline">@cinedimens</a></p>
               <p>• Facebook 粉絲團：<a href="https://www.facebook.com/profile.php?id=100093152435465&mibextid=LQQJ4d" target="_blank" rel="noopener noreferrer" className="text-stone-900 hover:underline">維度影學 Cine Dimension</a></p>

@@ -13,6 +13,7 @@ export interface SiteMetaInfo {
   youtube?: string;
   facebook?: string;
   instagram?: string;
+  portaly?: string;
 }
 
 export interface FounderSocials {
@@ -21,6 +22,7 @@ export interface FounderSocials {
   instagram: string;
   youtube: string;
   email: string;
+  portaly?: string;
 }
 
 export interface FounderInfo {

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useSiteData } from '../context/DataContext';
 import { PortfolioItem, PageView, InquiryLead } from '../types';
 import { getYouTubeThumbnailUrl, extractYouTubeVideoId } from '../utils/youtube';
+import { FounderAvatar } from './FounderAvatar';
 import { 
   Film, 
   PlusCircle, 
@@ -710,14 +711,11 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="h-40 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
-                  {assets.founderImage ? (
-                    <img src={assets.founderImage} alt="Founder Preview" className="max-h-full max-w-full object-contain rounded-lg" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="text-center text-slate-600 text-xs flex flex-col items-center gap-1">
-                      <User className="w-8 h-8 text-slate-700" />
-                      <span>尚未設定肖像圖</span>
-                    </div>
-                  )}
+                  <FounderAvatar 
+                    src={assets.founderImage || '/images/avatar.jpeg'} 
+                    alt="Founder Preview" 
+                    className="max-h-full max-w-full object-contain rounded-lg" 
+                  />
                 </div>
 
                 <div className="space-y-3">
@@ -795,11 +793,22 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Social Links */}
+            {/* Social Links & Portals */}
             <div className="bg-[#141720] border border-slate-800/80 p-5 rounded-2xl space-y-4">
-              <h2 className="text-base font-bold text-white border-b border-slate-800 pb-3">官方社群管道連結</h2>
+              <h2 className="text-base font-bold text-white border-b border-slate-800 pb-3">官方社群與傳送門連結</h2>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Portaly 傳送門 (個人線上課程 / 免費資源下載)</label>
+                  <input 
+                    type="text" 
+                    value={siteInfo.portaly || ''} 
+                    onChange={(e) => updateSiteInfo({ portaly: e.target.value })}
+                    placeholder="https://portaly.cc/cinedimension"
+                    className="w-full px-3 py-2 bg-[#191d27] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">YouTube 頻道</label>
                   <input 

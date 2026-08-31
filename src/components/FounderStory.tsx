@@ -3,8 +3,9 @@ import { FOUNDER_MILESTONES, AUDIENCE_PAIN_POINTS, FOUNDER_QUALIFICATIONS_DATA }
 import { useSiteData } from '../context/DataContext';
 import { PageView } from '../types';
 import { CineDimensionLogo } from './CineDimensionLogo';
+import { FounderAvatar } from './FounderAvatar';
 import { STATIC_ASSETS } from '../constants/assets';
-import { Camera, Video, Smartphone, Award, Sparkles, ArrowRight, BookOpen, Layers, Briefcase, Bot, Film, CheckCircle2 } from 'lucide-react';
+import { Camera, Video, Smartphone, Award, Sparkles, ArrowRight, BookOpen, Layers, Briefcase, Bot, Film, CheckCircle2, ExternalLink, Download, GraduationCap } from 'lucide-react';
 
 interface FounderStoryProps {
   onNavigate: (view: PageView) => void;
@@ -89,19 +90,13 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
         <div className="mb-14 p-6 sm:p-8 rounded-2xl bg-[#EFECE6] border border-stone-300 shadow-sm relative">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             
-            {/* Image Column (Deadlocked to STATIC_ASSETS.AVATAR) */}
+            {/* Image Column */}
             <div className="md:col-span-4">
               <div className="aspect-[3/4] rounded-xl overflow-hidden border border-stone-300 shadow-sm relative group bg-stone-200">
-                <img
-                  src={STATIC_ASSETS.AVATAR}
+                <FounderAvatar
+                  src={assets.founderImage || founderInfo.image || STATIC_ASSETS.AVATAR}
                   alt={`${founderInfo.name}（${founderInfo.nickname}）`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== STATIC_ASSETS.AVATAR) {
-                      e.currentTarget.src = STATIC_ASSETS.AVATAR;
-                    }
-                  }}
                 />
               </div>
             </div>
@@ -131,8 +126,8 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
                 </p>
               </div>
 
-              {/* 3. Refined Tags */}
-              <div className="pt-2 flex flex-wrap gap-2 text-xs font-sans">
+              {/* 3. Refined Tags & Portaly Link */}
+              <div className="pt-2 flex flex-wrap items-center gap-2 text-xs font-sans">
                 <span className="px-3 py-1.5 rounded-full bg-stone-200 text-stone-800 border border-stone-300 font-medium flex items-center gap-1.5 shadow-2xs">
                   <span>🏆</span> 大俠攝影教室｜專任特聘講師
                 </span>
@@ -143,8 +138,57 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
                   <span>🎬</span> 18年影視光影與 AI 工作流導師
                 </span>
               </div>
+
+              {/* 4. Portaly Channel Action */}
+              <div className="pt-3 border-t border-stone-300/80 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs font-sans text-stone-600">
+                  <GraduationCap className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>線上課程與免費資源下載：</span>
+                </div>
+                <a
+                  href="https://portaly.cc/cinedimension"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-sans text-xs font-bold transition-all shadow-sm group cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                  <span>前往 Portaly 傳送門</span>
+                  <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </a>
+              </div>
             </div>
 
+          </div>
+        </div>
+
+        {/* Portaly Showcase Banner */}
+        <div className="mb-12 p-6 sm:p-7 rounded-2xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-[#F6F4EE] border border-stone-700 shadow-md flex flex-col md:flex-row items-center justify-between gap-6 text-left">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-sans font-semibold border border-amber-500/30 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-300" />
+                ONLINE PORTAL & FREE RESOURCES
+              </span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-serif font-bold text-white tracking-wide">
+              悟哥 Portaly 個人線上課程 ＆ 免費資源下載傳送門
+            </h3>
+            <p className="text-xs sm:text-sm text-stone-300 font-serif leading-relaxed">
+              匯聚精選線上影音系統課、AI 實戰 Prompt 提示詞庫、免費素材與手機攝影學習指引。不受時間地點限制，隨時隨地開啟你的電影感創作旅程。
+            </p>
+          </div>
+
+          <div className="shrink-0 w-full md:w-auto flex flex-col sm:flex-row items-center gap-3">
+            <a
+              href="https://portaly.cc/cinedimension"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-sans text-xs font-bold tracking-wider transition-all shadow-sm flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-amber-200" />
+              <span>立即探索 Portaly 傳送門</span>
+              <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </a>
           </div>
         </div>
 

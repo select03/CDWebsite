@@ -53,8 +53,11 @@ function sanitizeLogo(logoUrl?: string): string {
   return STATIC_ASSETS.LOGO;
 }
 
-// Helper function to sanitize and normalize founder avatar image URL (strictly locked to /images/avatar.webp)
+// Helper function to sanitize and normalize founder avatar image URL (defaults to /images/avatar.jpeg)
 function sanitizeFounderImage(imgUrl?: string): string {
+  if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim() && !imgUrl.includes('avatar.webp')) {
+    return imgUrl.trim();
+  }
   return STATIC_ASSETS.AVATAR;
 }
 
@@ -64,7 +67,8 @@ const DEFAULT_SITE_INFO: SiteMetaInfo = {
   email: 'select03@gmail.com',
   youtube: '@cinedimens',
   facebook: '維度影學 Cine Dimension',
-  instagram: ''
+  instagram: '',
+  portaly: 'https://portaly.cc/cinedimension'
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -292,7 +296,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...rawData.siteInfo
         }));
 
-        if (rawData.siteInfo.email || rawData.siteInfo.youtube || rawData.siteInfo.facebook) {
+        if (rawData.siteInfo.email || rawData.siteInfo.youtube || rawData.siteInfo.facebook || rawData.siteInfo.portaly) {
           setFounderInfo(prev => ({
             ...prev,
             socials: {
@@ -300,7 +304,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: rawData.siteInfo.email || prev.socials.email,
               youtube: rawData.siteInfo.youtube || prev.socials.youtube,
               facebook: rawData.siteInfo.facebook || prev.socials.facebook,
-              instagram: rawData.siteInfo.instagram || prev.socials.instagram
+              instagram: rawData.siteInfo.instagram || prev.socials.instagram,
+              portaly: rawData.siteInfo.portaly || prev.socials.portaly || 'https://portaly.cc/cinedimension'
             }
           }));
         }

@@ -13,6 +13,7 @@ export const FOUNDER_INFO: FounderInfo = {
   taglines: ['先求有，再求好', 'Have Fun 享受創作', '用手機記錄真實的電影感'],
   socials: {
     website: 'https://cine-dimension.com',
+    portaly: 'https://portaly.cc/cinedimension',
     facebook: 'https://www.facebook.com/profile.php?id=100093152435465&mibextid=LQQJ4d',
     instagram: 'https://instagram.com',
     youtube: 'https://www.youtube.com/@cinedimens',
