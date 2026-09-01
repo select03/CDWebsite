@@ -169,43 +169,39 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
     const file = e.target.files?.[0];
     if (!file || !editingItem) return;
 
-    showToast(`正在處理圖片 ${file.name}...`, 'info');
+    showToast(`正在上傳圖片 ${file.name} 至 Cloudflare R2...`, 'info');
 
     try {
-      const base64 = await fileToCompressedBase64(file);
-      
-      // If Cloudflare Worker URL and token are configured, upload to GitHub
       if (workerUrl && adminToken) {
         const apiBase = workerUrl.replace(/\/+$/, '');
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+
         const res = await fetch(`${apiBase}/api/upload`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${adminToken}`
           },
-          body: JSON.stringify({
-            filename: file.name,
-            base64,
-            oldFilePath: editingItem.image,
-            replaceAndClean: true
-          })
+          body: formData
         });
 
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.details || data.error || 'GitHub 上傳失敗');
+          throw new Error(data.error || 'R2 上傳失敗');
         }
 
-        const newImageUrl = data.rawUrl || data.path;
+        const newImageUrl = data.url || data.rawUrl;
         setEditingItem({ ...editingItem, image: newImageUrl });
-        showToast('圖片已成功上傳至 GitHub 儲存庫！', 'success');
+        showToast('✨ 圖片已成功上傳至 Cloudflare R2！', 'success');
       } else {
-        // Fallback: Embed compressed Base64 preview
-        setEditingItem({ ...editingItem, image: base64 });
-        showToast('圖片已即時預覽並套用至本作品！', 'success');
+        const localUrl = URL.createObjectURL(file);
+        setEditingItem({ ...editingItem, image: localUrl });
+        showToast('圖片已套用本機即時預覽！', 'success');
       }
     } catch (err: any) {
       showToast(`上傳提示：${err.message}`, 'error');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -214,50 +210,47 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    showToast(`正在處理素材 ${file.name}...`, 'info');
+    showToast(`正在上傳素材 ${file.name} 至 Cloudflare R2...`, 'info');
 
     try {
-      const base64 = await fileToCompressedBase64(file);
-      const oldUrl = key === 'logo' ? assets.logo : assets.founderImage;
-
       if (workerUrl && adminToken) {
         const apiBase = workerUrl.replace(/\/+$/, '');
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+
         const res = await fetch(`${apiBase}/api/upload`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${adminToken}`
           },
-          body: JSON.stringify({
-            filename: file.name,
-            base64,
-            oldFilePath: oldUrl,
-            replaceAndClean: true
-          })
+          body: formData
         });
 
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.details || data.error || 'GitHub 上傳失敗');
+          throw new Error(data.error || 'R2 上傳失敗');
         }
 
-        const newImageUrl = data.rawUrl || data.path;
+        const newImageUrl = data.url || data.rawUrl;
         if (key === 'founderImage') {
           updateAssets({ founderImage: newImageUrl, avatar: newImageUrl });
         } else {
           updateAssets({ [key]: newImageUrl });
         }
-        showToast(`🎉 ${key === 'logo' ? 'Logo' : '創辦人肖像'} 已成功上傳！請點擊右上角「一鍵發佈上線」以儲存至 GitHub`, 'success');
+        showToast(`🎉 ${key === 'logo' ? 'Logo' : '創辦人肖像'} 已成功上傳至 Cloudflare R2！請點擊右上角「一鍵發佈」保存`, 'success');
       } else {
+        const localUrl = URL.createObjectURL(file);
         if (key === 'founderImage') {
-          updateAssets({ founderImage: base64, avatar: base64 });
+          updateAssets({ founderImage: localUrl, avatar: localUrl });
         } else {
-          updateAssets({ [key]: base64 });
+          updateAssets({ [key]: localUrl });
         }
-        showToast(`🎉 ${key === 'logo' ? 'Logo' : '創辦人肖像'} 已套用即時預覽！請點擊右上角「一鍵發佈上線」以同步至 GitHub`, 'success');
+        showToast(`🎉 ${key === 'logo' ? 'Logo' : '創辦人肖像'} 已套用即時預覽！請點擊右上角「一鍵發佈」保存`, 'success');
       }
     } catch (err: any) {
       showToast(`素材上傳提示：${err.message}`, 'error');
+    } finally {
+      e.target.value = '';
     }
   };
 

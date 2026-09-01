@@ -1326,11 +1326,10 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      showToast(`正在壓縮並上傳封面至 R2...`, 'info');
+      showToast(`正在上傳 ${file.name} 至 Cloudflare R2...`, 'info');
       try {
-        const base64 = await fileToCompressedBase64(file);
-        const result = await uploadImageToR2(file.name, base64);
-        const finalUrl = result.url || result.rawUrl || base64;
+        const result = await uploadImageFileToR2(file);
+        const finalUrl = result.url || result.rawUrl;
         document.getElementById('modal-input-image').value = finalUrl;
         document.getElementById('modal-auto-yt-thumb').checked = false;
         updateModalImagePreview(finalUrl);
@@ -1454,11 +1453,10 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      showToast(`正在處理並上傳 ${file.name} 至 Cloudflare R2...`, 'info');
+      showToast(`正在上傳 ${file.name} 至 Cloudflare R2...`, 'info');
       try {
-        const base64 = await fileToCompressedBase64(file);
-        const result = await uploadImageToR2(file.name, base64);
-        const finalUrl = result.url || result.rawUrl || base64;
+        const result = await uploadImageFileToR2(file);
+        const finalUrl = result.url || result.rawUrl;
 
         if (!currentContent.assets) currentContent.assets = {};
         currentContent.assets[key] = finalUrl;
@@ -1482,17 +1480,23 @@
       }
     }
 
-    async function uploadImageToR2(filename, base64) {
+    async function uploadImageFileToR2(file) {
       const apiBase = getApiBase();
       const url = apiBase ? `${apiBase}/api/upload` : '/api/upload';
 
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+
+      const headers = {
+        ...getAuthHeaders()
+      };
+      // Note: Do NOT set Content-Type header manually when sending FormData,
+      // the browser will automatically set 'multipart/form-data; boundary=...'
+
       const res = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders()
-        },
-        body: JSON.stringify({ filename, base64 })
+        headers: headers,
+        body: formData
       });
 
       const data = await res.json();

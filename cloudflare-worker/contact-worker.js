@@ -326,7 +326,7 @@ async function handleSaveContent(request, env) {
 }
 
 // ==========================================
-// 3. POST /api/upload (Upload to Cloudflare R2)
+// 3. POST /api/upload (Upload to Cloudflare R2 via native FormData / Binary)
 // ==========================================
 async function handleUploadAsset(request, env) {
   if (!env.MEDIA_BUCKET) {
@@ -340,91 +340,109 @@ async function handleUploadAsset(request, env) {
   let mimeType = 'image/jpeg';
   let originalFilename = 'image.jpg';
 
-  if (contentTypeHeader.includes('application/json')) {
-    const body = await request.json();
-    const { filename, base64, contentType } = body;
-    if (!base64) {
-      return jsonResponse({ error: '請提供 base64 圖片編碼' }, 400);
+  try {
+    if (contentTypeHeader.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      const file = formData.get('file') || formData.get('image');
+      if (!file || typeof file === 'string') {
+        return jsonResponse({ error: '未偵測到上傳檔案 (請使用 FormData 傳入 file 欄位)' }, 400);
+      }
+      originalFilename = file.name || 'image.jpg';
+      mimeType = file.type || 'image/jpeg';
+      fileBuffer = await file.arrayBuffer();
+    } else if (contentTypeHeader.includes('application/json')) {
+      const body = await request.json();
+      const { filename, base64, contentType } = body;
+      if (!base64) {
+        return jsonResponse({ error: '請提供 base64 圖片編碼或改用 FormData 上傳' }, 400);
+      }
+      originalFilename = filename || 'image.jpg';
+      
+      // Parse Base64 data URL if present
+      const detectedMime = base64.match(/^data:([^;,]+)(?:;charset=[^;,]+)?;base64,/i);
+      if (detectedMime && detectedMime[1]) {
+        mimeType = detectedMime[1].trim().toLowerCase();
+      } else if (contentType) {
+        mimeType = contentType.trim().toLowerCase();
+      } else if (originalFilename.toLowerCase().endsWith('.svg')) {
+        mimeType = 'image/svg+xml';
+      }
+
+      const base64Clean = base64.replace(/^data:[^,]+,/, '').trim();
+      const binaryStr = atob(base64Clean);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      fileBuffer = bytes.buffer;
+    } else {
+      // Raw binary stream
+      mimeType = contentTypeHeader.split(';')[0] || 'image/jpeg';
+      fileBuffer = await request.arrayBuffer();
     }
-    originalFilename = filename || 'image.jpg';
-    
-    // Parse Base64 data URL if present
-    const detectedMime = base64.match(/^data:([^;,]+)(?:;charset=[^;,]+)?;base64,/i);
-    if (detectedMime && detectedMime[1]) {
-      mimeType = detectedMime[1].trim().toLowerCase();
-    } else if (contentType) {
-      mimeType = contentType.trim().toLowerCase();
-    } else if (originalFilename.toLowerCase().endsWith('.svg')) {
+
+    if (!fileBuffer || fileBuffer.byteLength === 0) {
+      return jsonResponse({ error: '上傳檔案為空，請重新選擇檔案' }, 400);
+    }
+
+    // Auto-fix SVG mime type if name ends with .svg
+    if (originalFilename.toLowerCase().endsWith('.svg')) {
       mimeType = 'image/svg+xml';
     }
 
-    const base64Clean = base64.replace(/^data:[^,]+,/, '').trim();
-    const binaryStr = atob(base64Clean);
-    const bytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) {
-      bytes[i] = binaryStr.charCodeAt(i);
+    // Derive file extension
+    let ext = 'webp';
+    if (mimeType.includes('png')) ext = 'png';
+    else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
+    else if (mimeType.includes('svg')) ext = 'svg';
+    else if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('gif')) ext = 'gif';
+    else if (originalFilename.includes('.')) {
+      ext = originalFilename.split('.').pop().toLowerCase();
     }
-    fileBuffer = bytes.buffer;
-  } else if (contentTypeHeader.includes('multipart/form-data')) {
-    const formData = await request.formData();
-    const file = formData.get('file') || formData.get('image');
-    if (!file || typeof file === 'string') {
-      return jsonResponse({ error: '未偵測到上傳檔案' }, 400);
+
+    // Generate unique clean key
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const key = `images/img-${Date.now()}-${randomStr}.${ext}`;
+
+    // Write to R2 Object Storage
+    await env.MEDIA_BUCKET.put(key, fileBuffer, {
+      httpMetadata: {
+        contentType: mimeType,
+        cacheControl: 'public, max-age=31536000, immutable'
+      },
+      customMetadata: {
+        originalName: originalFilename,
+        uploadedAt: new Date().toISOString()
+      }
+    });
+
+    // Generate Public CDN URL
+    let publicUrl = '';
+    if (env.R2_PUBLIC_DOMAIN) {
+      const domain = env.R2_PUBLIC_DOMAIN.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      publicUrl = `https://${domain}/${key}`;
+    } else {
+      // Worker proxy URL fallback
+      const workerOrigin = new URL(request.url).origin;
+      publicUrl = `${workerOrigin}/api/assets/${key}`;
     }
-    originalFilename = file.name || 'image.jpg';
-    mimeType = file.type || 'image/jpeg';
-    fileBuffer = await file.arrayBuffer();
-  } else {
-    // Raw binary stream
-    mimeType = contentTypeHeader.split(';')[0] || 'image/jpeg';
-    fileBuffer = await request.arrayBuffer();
+
+    return jsonResponse({
+      success: true,
+      key,
+      url: publicUrl,
+      rawUrl: publicUrl,
+      filename: originalFilename,
+      size: fileBuffer.byteLength,
+      mimeType,
+      message: '✨ 圖片已成功上傳至 Cloudflare R2 物件儲存！'
+    });
+  } catch (err) {
+    return jsonResponse({
+      error: `R2 上傳處理失敗：${err.message || '未知錯誤'}`
+    }, 500);
   }
-
-  // Derive file extension
-  let ext = 'webp';
-  if (mimeType.includes('png')) ext = 'png';
-  else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
-  else if (mimeType.includes('svg')) ext = 'svg';
-  else if (mimeType.includes('webp')) ext = 'webp';
-  else if (mimeType.includes('gif')) ext = 'gif';
-  else if (originalFilename.includes('.')) {
-    ext = originalFilename.split('.').pop().toLowerCase();
-  }
-
-  // Generate unique clean key
-  const randomStr = Math.random().toString(36).substring(2, 8);
-  const key = `images/img-${Date.now()}-${randomStr}.${ext}`;
-
-  // Write to R2 Object Storage
-  await env.MEDIA_BUCKET.put(key, fileBuffer, {
-    httpMetadata: {
-      contentType: mimeType,
-      cacheControl: 'public, max-age=31536000, immutable'
-    },
-    customMetadata: {
-      originalName: originalFilename,
-      uploadedAt: new Date().toISOString()
-    }
-  });
-
-  // Generate Public CDN URL
-  let publicUrl = '';
-  if (env.R2_PUBLIC_DOMAIN) {
-    const domain = env.R2_PUBLIC_DOMAIN.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
-    publicUrl = `https://${domain}/${key}`;
-  } else {
-    // Worker proxy URL fallback
-    const workerOrigin = new URL(request.url).origin;
-    publicUrl = `${workerOrigin}/api/assets/${key}`;
-  }
-
-  return jsonResponse({
-    success: true,
-    key,
-    url: publicUrl,
-    rawUrl: publicUrl,
-    message: '✨ 圖片已成功上傳至 Cloudflare R2 物件儲存！'
-  });
 }
 
 // ==========================================
