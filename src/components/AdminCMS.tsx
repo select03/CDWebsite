@@ -305,10 +305,24 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
     setIsPublishing(true);
     const apiBase = workerUrl.replace(/\/+$/, '');
 
+    const resolvedLogo = assets.logo && assets.logo.trim() ? assets.logo.trim() : 'https://assets.cine-dimension.com/logo.JPG';
+    const resolvedFounder = assets.founderImage && assets.founderImage.trim() ? assets.founderImage.trim() : 'https://assets.cine-dimension.com/avatar.JPG';
+
     const payload = {
       content: {
-        siteInfo,
-        assets,
+        siteInfo: {
+          ...siteInfo,
+          logoUrl: resolvedLogo
+        },
+        site: {
+          ...siteInfo,
+          logoUrl: resolvedLogo
+        },
+        assets: {
+          ...assets,
+          logo: resolvedLogo,
+          founderImage: resolvedFounder
+        },
         portfolio
       },
       message: `[CMS] 更新視覺素材與 ${portfolio.length} 筆作品集 (${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })})`

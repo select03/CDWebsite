@@ -54,8 +54,21 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
         {/* Brand Logo & Philosophy Banner */}
         <div className="mb-10 p-6 sm:p-8 rounded-2xl bg-[#EFECE6] border border-stone-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-[#F6F4EE] border border-stone-300 p-3 shadow-sm flex items-center justify-center shrink-0">
-              <CineDimensionLogo size="xl" showText={false} customLogo={assets.logo || STATIC_ASSETS.LOGO} />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#F6F4EE] border border-stone-300 p-2 shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
+              <img
+                src={assets.logo || STATIC_ASSETS.LOGO}
+                alt="維度影學 Brand Emblem Logo"
+                className="w-full h-full object-contain drop-shadow-sm p-0.5"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.includes('logo.jpg') && !target.src.includes('logo.png')) {
+                    target.src = 'https://assets.cine-dimension.com/logo.jpg';
+                  } else if (!target.src.includes('logo.png')) {
+                    target.src = 'https://assets.cine-dimension.com/logo.png';
+                  }
+                }}
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">

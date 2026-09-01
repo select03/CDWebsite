@@ -1516,6 +1516,16 @@
     async function handlePublishContent() {
       collectSiteInfoFromDOM();
 
+      if (!currentContent.assets) currentContent.assets = {};
+      if (!currentContent.assets.logo || !currentContent.assets.logo.trim()) {
+        currentContent.assets.logo = 'https://assets.cine-dimension.com/logo.JPG';
+      }
+      if (!currentContent.site) currentContent.site = {};
+      currentContent.site.logoUrl = currentContent.assets.logo;
+      if (currentContent.siteInfo) {
+        currentContent.siteInfo.logoUrl = currentContent.assets.logo;
+      }
+
       const btn = document.getElementById('publish-btn');
       const progressBar = document.getElementById('publish-progress-bar');
       const progressInner = document.getElementById('publish-progress-inner');

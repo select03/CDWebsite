@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { STATIC_ASSETS } from '../constants/assets';
-import { Film } from 'lucide-react';
+import { STATIC_ASSETS, LOGO_FALLBACK_CANDIDATES } from '../constants/assets';
 
 interface CineDimensionLogoProps {
   className?: string;
@@ -31,13 +30,21 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
   };
 
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string>(getInitialLogo);
-  const [imageError, setImageError] = useState<boolean>(false);
+  const [candidateIndex, setCandidateIndex] = useState<number>(0);
 
   useEffect(() => {
     const nextLogo = getInitialLogo();
     setCurrentLogoUrl(nextLogo);
-    setImageError(false);
+    setCandidateIndex(0);
   }, [customLogo]);
+
+  const handleImageError = () => {
+    const nextIndex = candidateIndex + 1;
+    if (nextIndex < LOGO_FALLBACK_CANDIDATES.length) {
+      setCandidateIndex(nextIndex);
+      setCurrentLogoUrl(LOGO_FALLBACK_CANDIDATES[nextIndex]);
+    }
+  };
 
   // Height mappings for adaptive responsive display without distortion
   const logoHeightClasses = {
@@ -65,26 +72,13 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
     <div className={`inline-flex items-center gap-2.5 select-none shrink-0 min-w-max ${className}`}>
       {/* Brand Icon / Logo (Dynamic R2 Logo with Graceful Fallback) */}
       <div className="relative flex items-center justify-center shrink-0">
-        {!imageError && currentLogoUrl ? (
-          <img
-            src={currentLogoUrl}
-            alt="維度影學 Cine Dimension Logo"
-            className={`${logoHeightClasses[size]} object-contain drop-shadow-sm transition-opacity duration-200 rounded-sm`}
-            onError={() => {
-              if (currentLogoUrl !== STATIC_ASSETS.LOGO) {
-                // Try fallback to static R2 logo.JPG
-                setCurrentLogoUrl(STATIC_ASSETS.LOGO);
-              } else {
-                setImageError(true);
-              }
-            }}
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className={`${logoHeightClasses[size]} aspect-square flex items-center justify-center bg-stone-200 rounded-lg p-1 text-stone-700`}>
-            <Film className="w-5 h-5 text-amber-600" />
-          </div>
-        )}
+        <img
+          src={currentLogoUrl || STATIC_ASSETS.LOGO}
+          alt="維度影學 Cine Dimension Logo"
+          className={`${logoHeightClasses[size]} object-contain drop-shadow-sm transition-opacity duration-200 rounded-sm`}
+          onError={handleImageError}
+          referrerPolicy="no-referrer"
+        />
       </div>
 
       {/* Brand Text Block */}

@@ -268,8 +268,24 @@ async function handleGetContent(env) {
   if (!content) {
     content = DEFAULT_SITE_CONTENT;
   } else {
-    if (!content.siteInfo) content.siteInfo = DEFAULT_SITE_CONTENT.siteInfo;
-    if (!content.assets) content.assets = DEFAULT_SITE_CONTENT.assets;
+    if (!content.siteInfo) content.siteInfo = { ...DEFAULT_SITE_CONTENT.siteInfo };
+    if (!content.assets) content.assets = { ...DEFAULT_SITE_CONTENT.assets };
+    if (!content.site) content.site = { ...DEFAULT_SITE_CONTENT.siteInfo };
+    
+    // Auto-heal empty or broken logo URLs to official R2 CDN URL
+    if (!content.assets.logo || !content.assets.logo.trim() || content.assets.logo.includes('/images/logo.svg')) {
+      content.assets.logo = "https://assets.cine-dimension.com/logo.JPG";
+    }
+    if (!content.assets.founderImage || !content.assets.founderImage.trim() || content.assets.founderImage.includes('/images/avatar.jpeg')) {
+      content.assets.founderImage = "https://assets.cine-dimension.com/avatar.JPG";
+    }
+    if (!content.site.logoUrl || !content.site.logoUrl.trim() || content.site.logoUrl.includes('/images/logo.svg')) {
+      content.site.logoUrl = content.assets.logo;
+    }
+    if (!content.siteInfo.logoUrl || !content.siteInfo.logoUrl.trim()) {
+      content.siteInfo.logoUrl = content.assets.logo;
+    }
+
     if (!Array.isArray(content.portfolio) || content.portfolio.length === 0) {
       content.portfolio = DEFAULT_INITIAL_PORTFOLIO;
     }
@@ -304,6 +320,16 @@ async function handleSaveContent(request, env) {
   const contentToSave = body.content || body;
   if (!contentToSave || (!contentToSave.portfolio && !contentToSave.siteInfo && !contentToSave.assets)) {
     return jsonResponse({ error: '缺少有效的內容結構 (content)' }, 400);
+  }
+
+  if (!contentToSave.assets) contentToSave.assets = {};
+  if (!contentToSave.assets.logo || !contentToSave.assets.logo.trim() || contentToSave.assets.logo.includes('/images/logo.svg')) {
+    contentToSave.assets.logo = "https://assets.cine-dimension.com/logo.JPG";
+  }
+  if (!contentToSave.site) contentToSave.site = {};
+  contentToSave.site.logoUrl = contentToSave.assets.logo;
+  if (contentToSave.siteInfo) {
+    contentToSave.siteInfo.logoUrl = contentToSave.assets.logo;
   }
 
   await env.SITE_KV.put('site_content', JSON.stringify(contentToSave));

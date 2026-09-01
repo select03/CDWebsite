@@ -12,6 +12,13 @@ export const STATIC_ASSETS = {
   PORTFOLIO_FALLBACK_THUMBNAIL: 'https://assets.cine-dimension.com/shell.PNG',
 } as const;
 
+export const LOGO_FALLBACK_CANDIDATES = [
+  'https://assets.cine-dimension.com/logo.JPG',
+  'https://assets.cine-dimension.com/logo.jpg',
+  'https://assets.cine-dimension.com/logo.png',
+  'https://assets.cine-dimension.com/logo.PNG',
+] as const;
+
 export const AVATAR_FALLBACK_CANDIDATES = [
   'https://assets.cine-dimension.com/avatar.JPG',
   '/images/avatar.jpeg',
