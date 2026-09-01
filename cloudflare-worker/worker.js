@@ -131,8 +131,8 @@ const DEFAULT_SITE_CONTENT = {
     portaly: "https://portaly.cc/cinedimension"
   },
   assets: {
-    logo: "",
-    founderImage: ""
+    logo: "https://assets.cine-dimension.com/logo.JPG",
+    founderImage: "https://assets.cine-dimension.com/avatar.JPG"
   },
   portfolio: DEFAULT_INITIAL_PORTFOLIO
 };

@@ -50,7 +50,14 @@ const DEFAULT_ASSETS: SiteAssets = {
 
 // Helper function to sanitize and normalize brand logo URL (supports dynamic R2 URLs with default fallback)
 function sanitizeLogo(logoUrl?: string): string {
-  if (logoUrl && typeof logoUrl === 'string' && logoUrl.trim() && !logoUrl.includes('assets/images/image.jpeg') && !logoUrl.endsWith('/image.jpeg')) {
+  if (
+    logoUrl &&
+    typeof logoUrl === 'string' &&
+    logoUrl.trim() &&
+    !logoUrl.includes('/images/logo.svg') &&
+    !logoUrl.includes('assets/images/image.jpeg') &&
+    !logoUrl.endsWith('/image.jpeg')
+  ) {
     return logoUrl.trim();
   }
   return STATIC_ASSETS.LOGO;
@@ -58,7 +65,13 @@ function sanitizeLogo(logoUrl?: string): string {
 
 // Helper function to sanitize and normalize founder avatar image URL (supports dynamic R2 URLs with default fallback)
 function sanitizeFounderImage(imgUrl?: string): string {
-  if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim() && !imgUrl.includes('avatar.webp')) {
+  if (
+    imgUrl &&
+    typeof imgUrl === 'string' &&
+    imgUrl.trim() &&
+    !imgUrl.includes('avatar.webp') &&
+    !imgUrl.includes('/images/avatar.jpeg')
+  ) {
     return imgUrl.trim();
   }
   return STATIC_ASSETS.AVATAR;
@@ -272,43 +285,54 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (rawData) {
       // A. Update Assets (Logo & Founder Avatar)
-      if (rawData.assets) {
-        const rawLogo = (rawData.assets.logo || '').trim();
-        const newLogo = sanitizeLogo(rawLogo);
-        const rawFounderImg = (rawData.assets.founderImage || rawData.assets.avatar || '').trim();
-        const newFounderImg = sanitizeFounderImage(rawFounderImg);
+      const rawLogo = (
+        rawData.assets?.logo ||
+        rawData.site?.logoUrl ||
+        rawData.siteInfo?.logoUrl ||
+        rawData.logoUrl ||
+        ''
+      ).trim();
+      const newLogo = sanitizeLogo(rawLogo);
+      const rawFounderImg = (
+        rawData.assets?.founderImage ||
+        rawData.assets?.avatar ||
+        rawData.founder?.avatarUrl ||
+        rawData.founderImage ||
+        ''
+      ).trim();
+      const newFounderImg = sanitizeFounderImage(rawFounderImg);
 
-        setAssets(prev => ({
+      setAssets(prev => ({
+        ...prev,
+        logo: newLogo,
+        founderImage: newFounderImg
+      }));
+
+      if (newFounderImg) {
+        setFounderInfo(prev => ({
           ...prev,
-          logo: newLogo,
-          founderImage: newFounderImg
+          image: newFounderImg
         }));
-
-        if (newFounderImg) {
-          setFounderInfo(prev => ({
-            ...prev,
-            image: newFounderImg
-          }));
-        }
       }
 
       // B. Update Site Info & Socials
-      if (rawData.siteInfo) {
+      const incomingSiteInfo = rawData.siteInfo || rawData.site;
+      if (incomingSiteInfo) {
         setSiteInfo(prev => ({
           ...prev,
-          ...rawData.siteInfo
+          ...incomingSiteInfo
         }));
 
-        if (rawData.siteInfo.email || rawData.siteInfo.youtube || rawData.siteInfo.facebook || rawData.siteInfo.portaly) {
+        if (incomingSiteInfo.email || incomingSiteInfo.youtube || incomingSiteInfo.facebook || incomingSiteInfo.portaly) {
           setFounderInfo(prev => ({
             ...prev,
             socials: {
               ...prev.socials,
-              email: rawData.siteInfo.email || prev.socials.email,
-              youtube: rawData.siteInfo.youtube || prev.socials.youtube,
-              facebook: rawData.siteInfo.facebook || prev.socials.facebook,
-              instagram: rawData.siteInfo.instagram || prev.socials.instagram,
-              portaly: rawData.siteInfo.portaly || prev.socials.portaly || 'https://portaly.cc/cinedimension'
+              email: incomingSiteInfo.email || prev.socials.email,
+              youtube: incomingSiteInfo.youtube || prev.socials.youtube,
+              facebook: incomingSiteInfo.facebook || prev.socials.facebook,
+              instagram: incomingSiteInfo.instagram || prev.socials.instagram,
+              portaly: incomingSiteInfo.portaly || prev.socials.portaly || 'https://portaly.cc/cinedimension'
             }
           }));
         }

@@ -650,18 +650,16 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     <span>品牌 Logo 標誌</span>
                   </h3>
-                  <span className="text-[11px] text-slate-400">建議 PNG / SVG</span>
+                  <span className="text-[11px] text-slate-400">JPG / PNG / SVG</span>
                 </div>
 
                 <div className="h-40 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
-                  {assets.logo ? (
-                    <img src={assets.logo} alt="Logo Preview" className="max-h-full max-w-full object-contain" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="text-center text-slate-600 text-xs flex flex-col items-center gap-1">
-                      <Film className="w-8 h-8 text-slate-700" />
-                      <span>使用預設向量 Logo（點擊下方上傳自訂圖片）</span>
-                    </div>
-                  )}
+                  <img
+                    src={assets.logo || 'https://assets.cine-dimension.com/logo.JPG'}
+                    alt="Logo Preview"
+                    className="max-h-full max-w-full object-contain"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
 
                 <div className="space-y-3">
@@ -680,23 +678,24 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
                       <Upload className="w-3.5 h-3.5 text-amber-400" />
                       <span>選擇 Logo 圖片上傳</span>
                     </button>
-                    {assets.logo && (
-                      <button
-                        onClick={() => updateAssets({ logo: '' })}
-                        className="px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 border border-rose-900/40 text-rose-300 rounded-xl text-xs transition-colors"
-                        title="還原為預設向量 Logo"
-                      >
-                        還原預設
-                      </button>
-                    )}
+                    <button
+                      onClick={() => updateAssets({ logo: 'https://assets.cine-dimension.com/logo.JPG' })}
+                      className="px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 border border-rose-900/40 text-rose-300 rounded-xl text-xs transition-colors"
+                      title="還原為 R2 官方預設 Logo"
+                    >
+                      還原預設
+                    </button>
                   </div>
-                  <input 
-                    type="text" 
-                    value={assets.logo || ''} 
-                    placeholder="或直接輸入圖片 URL (https://...)" 
-                    onChange={(e) => updateAssets({ logo: e.target.value })}
-                    className="w-full px-3 py-1.5 bg-[#191d27] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  />
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">網站 Logo 網址 (URL)：</label>
+                    <input 
+                      type="text" 
+                      value={assets.logo || 'https://assets.cine-dimension.com/logo.JPG'} 
+                      placeholder="https://assets.cine-dimension.com/logo.JPG" 
+                      onChange={(e) => updateAssets({ logo: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-[#191d27] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -712,7 +711,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
 
                 <div className="h-40 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
                   <FounderAvatar 
-                    src={assets.founderImage || '/images/avatar.jpeg'} 
+                    src={assets.founderImage || 'https://assets.cine-dimension.com/avatar.JPG'} 
                     alt="Founder Preview" 
                     className="max-h-full max-w-full object-contain rounded-lg" 
                   />
@@ -734,14 +733,24 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
                       <Upload className="w-3.5 h-3.5 text-amber-400" />
                       <span>選擇肖像圖片上傳</span>
                     </button>
+                    <button
+                      onClick={() => updateAssets({ founderImage: 'https://assets.cine-dimension.com/avatar.JPG', avatar: 'https://assets.cine-dimension.com/avatar.JPG' })}
+                      className="px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 border border-rose-900/40 text-rose-300 rounded-xl text-xs transition-colors"
+                      title="還原為 R2 官方預設肖像"
+                    >
+                      還原預設
+                    </button>
                   </div>
-                  <input 
-                    type="text" 
-                    value={assets.founderImage || ''} 
-                    placeholder="或直接輸入圖片 URL (https://...)" 
-                    onChange={(e) => updateAssets({ founderImage: e.target.value })}
-                    className="w-full px-3 py-1.5 bg-[#191d27] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  />
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">創辦人形象照網址 (URL)：</label>
+                    <input 
+                      type="text" 
+                      value={assets.founderImage || 'https://assets.cine-dimension.com/avatar.JPG'} 
+                      placeholder="https://assets.cine-dimension.com/avatar.JPG" 
+                      onChange={(e) => updateAssets({ founderImage: e.target.value, avatar: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-[#191d27] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 

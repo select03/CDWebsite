@@ -942,8 +942,8 @@
         portaly: "https://portaly.cc/cinedimension"
       },
       assets: {
-        logo: "",
-        founderImage: ""
+        logo: "https://assets.cine-dimension.com/logo.JPG",
+        founderImage: "https://assets.cine-dimension.com/avatar.JPG"
       },
       portfolio: JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO_ITEMS))
     };
@@ -1387,7 +1387,7 @@
     function renderAssetsPanel() {
       const assets = currentContent.assets || {};
       
-      const logoUrl = assets.logo || '';
+      const logoUrl = assets.logo || 'https://assets.cine-dimension.com/logo.JPG';
       document.getElementById('asset-url-logo').value = logoUrl;
       const previewLogo = document.getElementById('preview-asset-logo');
       const emptyLogo = document.getElementById('empty-asset-logo');
@@ -1400,7 +1400,7 @@
         emptyLogo.classList.remove('hidden');
       }
 
-      const founderUrl = assets.founderImage || assets.avatar || '';
+      const founderUrl = assets.founderImage || assets.avatar || 'https://assets.cine-dimension.com/avatar.JPG';
       document.getElementById('asset-url-founder').value = founderUrl;
       const previewFounder = document.getElementById('preview-asset-founder');
       const emptyFounder = document.getElementById('empty-asset-founder');
@@ -1416,19 +1416,19 @@
 
     function resetToDefaultLogo() {
       if (!currentContent.assets) currentContent.assets = {};
-      currentContent.assets.logo = '';
+      currentContent.assets.logo = 'https://assets.cine-dimension.com/logo.JPG';
       markDirty();
       renderAssetsPanel();
-      showToast('已恢復官方預設向量 Logo！請點擊「一鍵發佈」保存', 'success');
+      showToast('已恢復 R2 官方預設 Logo (https://assets.cine-dimension.com/logo.JPG)！請點擊「一鍵發佈」保存', 'success');
     }
 
     function resetToDefaultAvatar() {
       if (!currentContent.assets) currentContent.assets = {};
-      currentContent.assets.founderImage = '';
-      currentContent.assets.avatar = '';
+      currentContent.assets.founderImage = 'https://assets.cine-dimension.com/avatar.JPG';
+      currentContent.assets.avatar = 'https://assets.cine-dimension.com/avatar.JPG';
       markDirty();
       renderAssetsPanel();
-      showToast('已恢復創辦人官方預設照片！請點擊「一鍵發佈」保存', 'success');
+      showToast('已恢復創辦人 R2 官方預設照片 (https://assets.cine-dimension.com/avatar.JPG)！請點擊「一鍵發佈」保存', 'success');
     }
 
     function handleAssetUrlChange(key, value) {

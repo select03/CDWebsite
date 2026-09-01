@@ -1,18 +1,19 @@
 /**
  * 全域靜態資產死鎖常數 (Global Static Asset Deadlock Constants)
- * 嚴格固定品牌 Logo、個人大頭照與作品集預設縮圖之靜態路徑
- * 確保不被任何動態 API / KV / content.json 覆蓋，避免破圖
+ * 嚴格固定品牌 Logo、個人大頭照與作品集預設縮圖之 Cloudflare R2 永久 CDN 網址
+ * 確保不被空值覆蓋，避免破圖或 404
  */
 export const STATIC_ASSETS = {
-  /** 品牌 Logo 向量圖檔 */
-  LOGO: '/images/logo.svg',
-  /** 個人大頭照 Avatar (預設連結至 avatar.jpeg，支援 jpeg/jpg/png/webp) */
-  AVATAR: '/images/avatar.jpeg',
-  /** 作品集預設縮圖與 Fallback 封面圖 (Portfolio Thumbnail) */
-  PORTFOLIO_FALLBACK_THUMBNAIL: '/images/shell.png',
+  /** 品牌 Logo 圖檔 (Cloudflare R2 永久網址) */
+  LOGO: 'https://assets.cine-dimension.com/logo.JPG',
+  /** 個人大頭照 Avatar (Cloudflare R2 永久網址) */
+  AVATAR: 'https://assets.cine-dimension.com/avatar.JPG',
+  /** 作品集預設縮圖與 Fallback 封面圖 (Cloudflare R2 永久網址) */
+  PORTFOLIO_FALLBACK_THUMBNAIL: 'https://assets.cine-dimension.com/shell.PNG',
 } as const;
 
 export const AVATAR_FALLBACK_CANDIDATES = [
+  'https://assets.cine-dimension.com/avatar.JPG',
   '/images/avatar.jpeg',
   '/images/avatar.jpg',
   '/images/avatar.png',
@@ -22,3 +23,4 @@ export const AVATAR_FALLBACK_CANDIDATES = [
 export const BRAND_LOGO_SRC = STATIC_ASSETS.LOGO;
 export const FOUNDER_AVATAR_SRC = STATIC_ASSETS.AVATAR;
 export const DEFAULT_PORTFOLIO_IMAGE = STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL;
+
