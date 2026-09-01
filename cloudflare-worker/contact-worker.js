@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * 維度影學 CineDimension - 現代化雲端後端 (Cloudflare Worker v4.1)
+ * 維度影學 CineDimension - 現代化雲端後端 (Cloudflare Worker v4.2)
  * cloudflare-worker/contact-worker.js
  * 
  * 核心架構原則：代碼、資料庫與圖床資產徹底解耦
@@ -144,7 +144,9 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // 1. CORS Preflight (OPTIONS 請求一律直接回傳 204 放行所有標頭)
+    // =========================================================================
+    // 1. TOP-LEVEL CORS PREFLIGHT (全域最頂層攔截 OPTIONS 請求，支援 Safari 嚴格預檢)
+    // =========================================================================
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -153,12 +155,12 @@ export default {
     }
 
     try {
-      // 2. GET /api/health (健康檢查與狀態)
+      // 2. GET /api/health (健康檢查與狀態監控)
       if (path === "/" || path === "/api/health" || path === "/health") {
         return jsonResponse({
           status: "online",
           service: "CineDimension KV & R2 Decoupled API",
-          version: "4.1.0",
+          version: "4.2.0",
           hasKvBinding: Boolean(env.SITE_KV),
           hasR2Binding: Boolean(env.MEDIA_BUCKET),
           hasPublicDomain: Boolean(env.R2_PUBLIC_DOMAIN),
@@ -171,7 +173,7 @@ export default {
         if (!checkAuth(request, env)) {
           return jsonResponse({ error: "密碼錯誤或金鑰無效" }, 401);
         }
-        return jsonResponse({ success: true, message: "驗證成功" });
+        return jsonResponse({ success: true, message: "金鑰驗證成功" });
       }
 
       // 4. GET /api/content 或 /api/remote-content (公開讀取 KV 最新網站內容)
@@ -197,7 +199,7 @@ export default {
         return await handleSaveContent(request, env);
       }
 
-      // 8. POST /api/upload (圖片直傳至 R2，需管理員授權)
+      // 8. POST /api/upload (圖片直傳至 R2，需管理員授權，具備最高容錯率解析)
       if (path === "/api/upload" && request.method === "POST") {
         if (!checkAuth(request, env)) {
           return jsonResponse({ error: "未授權：請先登入後台" }, 401);
@@ -215,7 +217,7 @@ export default {
 
       return jsonResponse({ error: "Endpoint Not Found / API 路徑不存在" }, 404);
     } catch (err) {
-      console.error("[Worker Error]:", err);
+      console.error("[Worker Global Error]:", err);
       return jsonResponse({
         error: "伺服器內部執行錯誤",
         message: err.message || String(err)
@@ -230,8 +232,9 @@ export default {
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Pass, X-Admin-Secret, X-Admin-Password, x-admin-pass, x-admin-secret, x-admin-password, X-Requested-With, Cache-Control, Pragma",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Pass, X-Admin-Secret, X-Admin-Password, x-admin-pass, x-admin-secret, x-admin-password, X-Requested-With, Cache-Control, Pragma, Accept, Origin",
+    "Access-Control-Expose-Headers": "ETag, Content-Length, Content-Type",
     "Access-Control-Max-Age": "86400"
   };
 }
@@ -248,7 +251,7 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
 }
 
 // ==========================================
-// ADMIN AUTH VERIFICATION (最高容錯率驗證)
+// ADMIN AUTH VERIFICATION (多層次容錯驗證)
 // ==========================================
 function checkAuth(request, env) {
   let token = "";
@@ -375,65 +378,111 @@ async function handleSaveContent(request, env) {
 }
 
 // ==========================================
-// 3. POST /api/upload (上傳圖片至 Cloudflare R2 物件儲存)
+// 3. POST /api/upload (上傳圖片至 Cloudflare R2 物件儲存 - 超強容錯機制)
 // ==========================================
 async function handleUploadAsset(request, env) {
   if (!env.MEDIA_BUCKET) {
     return jsonResponse({
-      error: "Worker 尚未綁定 MEDIA_BUCKET (R2) 資源，請在 Cloudflare 控制台設定 R2 Bucket 綁定。"
+      error: "Worker 尚未綁定 MEDIA_BUCKET (R2) 資源，請在 Cloudflare 控制台設定 R2 Bucket 綁定（變數名稱：MEDIA_BUCKET）。"
     }, 500);
   }
 
-  const contentTypeHeader = request.headers.get("content-type") || "";
-  let fileBuffer;
+  const contentTypeHeader = (request.headers.get("content-type") || "").toLowerCase();
+  let fileBuffer = null;
   let mimeType = "image/jpeg";
   let originalFilename = "image.jpg";
 
   try {
-    if (contentTypeHeader.includes("multipart/form-data")) {
-      const formData = await request.formData();
-      const file = formData.get("file") || formData.get("image");
-      if (!file || typeof file === "string") {
-        return jsonResponse({ error: "未偵測到上傳檔案 (請使用 FormData 傳入 file 欄位)" }, 400);
-      }
-      originalFilename = file.name || "image.jpg";
-      mimeType = file.type || "image/jpeg";
-      fileBuffer = await file.arrayBuffer();
-    } else if (contentTypeHeader.includes("application/json")) {
-      const body = await request.json();
-      const { filename, base64, contentType } = body;
-      if (!base64) {
-        return jsonResponse({ error: "請提供 base64 圖片編碼或改用 FormData 上傳" }, 400);
-      }
-      originalFilename = filename || "image.jpg";
-      
-      const detectedMime = base64.match(/^data:([^;,]+)(?:;charset=[^;,]+)?;base64,/i);
-      if (detectedMime && detectedMime[1]) {
-        mimeType = detectedMime[1].trim().toLowerCase();
-      } else if (contentType) {
-        mimeType = contentType.trim().toLowerCase();
-      } else if (originalFilename.toLowerCase().endsWith(".svg")) {
-        mimeType = "image/svg+xml";
-      }
+    // 方案 A: 標準 multipart/form-data 原生二進制解析
+    if (contentTypeHeader.includes("multipart/form-data") || contentTypeHeader.includes("form-data")) {
+      try {
+        const formData = await request.formData();
+        let file = formData.get("file") || formData.get("image") || formData.get("upload") || formData.get("media");
+        
+        // 若找不到預設欄位，遍歷所有 entries 取出第一個檔案物件
+        if (!file || typeof file === "string") {
+          for (const [_key, val] of formData.entries()) {
+            if (val && typeof val === "object" && typeof val.arrayBuffer === "function") {
+              file = val;
+              break;
+            }
+          }
+        }
 
-      const base64Clean = base64.replace(/^data:[^,]+,/, "").trim();
-      const binaryStr = atob(base64Clean);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
+        if (file && typeof file.arrayBuffer === "function") {
+          originalFilename = file.name || "image.jpg";
+          mimeType = file.type || "image/jpeg";
+          fileBuffer = await file.arrayBuffer();
+        }
+      } catch (formErr) {
+        console.warn("[FormData Parse Warning, falling back to raw]:", formErr);
       }
-      fileBuffer = bytes.buffer;
-    } else {
-      mimeType = contentTypeHeader.split(";")[0] || "image/jpeg";
-      fileBuffer = await request.arrayBuffer();
+    }
+
+    // 方案 B: JSON Payload (Base64 編碼圖片直傳容錯備援)
+    if (!fileBuffer && (contentTypeHeader.includes("application/json") || contentTypeHeader.includes("text/json"))) {
+      try {
+        const body = await request.json();
+        const { filename, base64, dataUrl, contentType } = body;
+        const targetBase64 = base64 || dataUrl;
+
+        if (targetBase64) {
+          originalFilename = filename || "image.jpg";
+          
+          const detectedMime = targetBase64.match(/^data:([^;,]+)(?:;charset=[^;,]+)?;base64,/i);
+          if (detectedMime && detectedMime[1]) {
+            mimeType = detectedMime[1].trim().toLowerCase();
+          } else if (contentType) {
+            mimeType = contentType.trim().toLowerCase();
+          } else if (originalFilename.toLowerCase().endsWith(".svg")) {
+            mimeType = "image/svg+xml";
+          }
+
+          const base64Clean = targetBase64.replace(/^data:[^,]+,/, "").trim();
+          const binaryStr = atob(base64Clean);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          fileBuffer = bytes.buffer;
+        }
+      } catch (jsonErr) {
+        console.warn("[JSON Parse Warning]:", jsonErr);
+      }
+    }
+
+    // 方案 C: Raw Binary Stream (Octet-stream / 直接傳入 ArrayBuffer)
+    if (!fileBuffer || fileBuffer.byteLength === 0) {
+      try {
+        fileBuffer = await request.arrayBuffer();
+        if (contentTypeHeader && !contentTypeHeader.includes("multipart") && !contentTypeHeader.includes("json")) {
+          mimeType = contentTypeHeader.split(";")[0].trim();
+        }
+        const customName = request.headers.get("X-Filename") || request.headers.get("x-filename");
+        if (customName) originalFilename = decodeURIComponent(customName);
+      } catch (streamErr) {
+        console.warn("[Stream Read Warning]:", streamErr);
+      }
     }
 
     if (!fileBuffer || fileBuffer.byteLength === 0) {
-      return jsonResponse({ error: "上傳檔案為空，請重新選擇檔案" }, 400);
+      return jsonResponse({
+        error: "上傳檔案為空或解析失敗，請重新選擇圖檔上傳。"
+      }, 400);
     }
 
-    if (originalFilename.toLowerCase().endsWith(".svg")) {
+    // 檔名與 MIME Type 自動校正
+    const lowerFilename = originalFilename.toLowerCase();
+    if (lowerFilename.endsWith(".svg")) {
       mimeType = "image/svg+xml";
+    } else if (lowerFilename.endsWith(".png")) {
+      mimeType = "image/png";
+    } else if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) {
+      mimeType = "image/jpeg";
+    } else if (lowerFilename.endsWith(".webp")) {
+      mimeType = "image/webp";
+    } else if (lowerFilename.endsWith(".gif")) {
+      mimeType = "image/gif";
     }
 
     let ext = "webp";
@@ -443,25 +492,25 @@ async function handleUploadAsset(request, env) {
     else if (mimeType.includes("webp")) ext = "webp";
     else if (mimeType.includes("gif")) ext = "gif";
     else if (originalFilename.includes(".")) {
-      ext = originalFilename.split(".").pop().toLowerCase();
+      ext = originalFilename.split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "");
     }
 
     const randomStr = Math.random().toString(36).substring(2, 8);
     const key = `images/img-${Date.now()}-${randomStr}.${ext}`;
 
-    // 寫入 Cloudflare R2
+    // 寫入 Cloudflare R2 Bucket
     await env.MEDIA_BUCKET.put(key, fileBuffer, {
       httpMetadata: {
         contentType: mimeType,
         cacheControl: "public, max-age=31536000, immutable"
       },
       customMetadata: {
-        originalName: originalFilename,
+        originalName: encodeURIComponent(originalFilename),
         uploadedAt: new Date().toISOString()
       }
     });
 
-    // 建立公開訪問網址
+    // 建立公開存取網址 (優先採用 R2 自訂網域，次之採用 Worker Assets 代理)
     let publicUrl = "";
     if (env.R2_PUBLIC_DOMAIN) {
       const domain = env.R2_PUBLIC_DOMAIN.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
@@ -482,8 +531,9 @@ async function handleUploadAsset(request, env) {
       message: "✨ 圖片已成功上傳至 Cloudflare R2 物件儲存！"
     });
   } catch (err) {
+    console.error("[R2 Upload Critical Error]:", err);
     return jsonResponse({
-      error: `R2 上傳處理失敗：${err.message || "未知錯誤"}`
+      error: `R2 上傳處理失敗：${err.message || "未知伺服器錯誤"}`
     }, 500);
   }
 }
@@ -493,7 +543,7 @@ async function handleUploadAsset(request, env) {
 // ==========================================
 async function handleServeR2Asset(request, env) {
   if (!env.MEDIA_BUCKET) {
-    return new Response("R2 未綁定", { status: 500 });
+    return new Response("R2 未綁定", { status: 500, headers: corsHeaders() });
   }
 
   const url = new URL(request.url);
@@ -501,7 +551,7 @@ async function handleServeR2Asset(request, env) {
 
   const object = await env.MEDIA_BUCKET.get(key);
   if (!object) {
-    return new Response("檔案不存在", { status: 404 });
+    return new Response("檔案不存在", { status: 404, headers: corsHeaders() });
   }
 
   const headers = new Headers();
