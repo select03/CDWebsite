@@ -942,7 +942,7 @@
         portaly: "https://portaly.cc/cinedimension"
       },
       assets: {
-        logo: "https://assets.cine-dimension.com/logo.JPG",
+        logo: "https://assets.cine-dimension.com/Logo.svg",
         founderImage: "https://assets.cine-dimension.com/avatar.JPG"
       },
       portfolio: JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO_ITEMS))
@@ -1387,7 +1387,7 @@
     function renderAssetsPanel() {
       const assets = currentContent.assets || {};
       
-      const logoUrl = assets.logo || 'https://assets.cine-dimension.com/logo.JPG';
+      const logoUrl = assets.logo || 'https://assets.cine-dimension.com/Logo.svg';
       document.getElementById('asset-url-logo').value = logoUrl;
       const previewLogo = document.getElementById('preview-asset-logo');
       const emptyLogo = document.getElementById('empty-asset-logo');
@@ -1416,10 +1416,10 @@
 
     function resetToDefaultLogo() {
       if (!currentContent.assets) currentContent.assets = {};
-      currentContent.assets.logo = 'https://assets.cine-dimension.com/logo.JPG';
+      currentContent.assets.logo = 'https://assets.cine-dimension.com/Logo.svg';
       markDirty();
       renderAssetsPanel();
-      showToast('已恢復 R2 官方預設 Logo (https://assets.cine-dimension.com/logo.JPG)！請點擊「一鍵發佈」保存', 'success');
+      showToast('已恢復 R2 官方預設 Logo (https://assets.cine-dimension.com/Logo.svg)！請點擊「一鍵發佈」保存', 'success');
     }
 
     function resetToDefaultAvatar() {
@@ -1518,7 +1518,7 @@
 
       if (!currentContent.assets) currentContent.assets = {};
       if (!currentContent.assets.logo || !currentContent.assets.logo.trim()) {
-        currentContent.assets.logo = 'https://assets.cine-dimension.com/logo.JPG';
+        currentContent.assets.logo = 'https://assets.cine-dimension.com/Logo.svg';
       }
       if (!currentContent.site) currentContent.site = {};
       currentContent.site.logoUrl = currentContent.assets.logo;

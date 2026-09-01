@@ -305,7 +305,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
     setIsPublishing(true);
     const apiBase = workerUrl.replace(/\/+$/, '');
 
-    const resolvedLogo = assets.logo && assets.logo.trim() ? assets.logo.trim() : 'https://assets.cine-dimension.com/logo.JPG';
+    const resolvedLogo = assets.logo && assets.logo.trim() ? assets.logo.trim() : 'https://assets.cine-dimension.com/Logo.svg';
     const resolvedFounder = assets.founderImage && assets.founderImage.trim() ? assets.founderImage.trim() : 'https://assets.cine-dimension.com/avatar.JPG';
 
     const payload = {
@@ -669,7 +669,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
 
                 <div className="h-40 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
                   <img
-                    src={assets.logo || 'https://assets.cine-dimension.com/logo.JPG'}
+                    src={assets.logo || 'https://assets.cine-dimension.com/Logo.svg'}
                     alt="Logo Preview"
                     className="max-h-full max-w-full object-contain"
                     referrerPolicy="no-referrer"
@@ -693,9 +693,9 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
                       <span>選擇 Logo 圖片上傳</span>
                     </button>
                     <button
-                      onClick={() => updateAssets({ logo: 'https://assets.cine-dimension.com/logo.JPG' })}
+                      onClick={() => updateAssets({ logo: 'https://assets.cine-dimension.com/Logo.svg' })}
                       className="px-3 py-2 bg-rose-950/30 hover:bg-rose-900/50 border border-rose-900/40 text-rose-300 rounded-xl text-xs transition-colors"
-                      title="還原為 R2 官方預設 Logo"
+                      title="還原為 R2 官方預設 Logo (Logo.svg)"
                     >
                       還原預設
                     </button>
@@ -704,8 +704,8 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
                     <label className="block text-[11px] text-slate-400 mb-1">網站 Logo 網址 (URL)：</label>
                     <input 
                       type="text" 
-                      value={assets.logo || 'https://assets.cine-dimension.com/logo.JPG'} 
-                      placeholder="https://assets.cine-dimension.com/logo.JPG" 
+                      value={assets.logo || 'https://assets.cine-dimension.com/Logo.svg'} 
+                      placeholder="https://assets.cine-dimension.com/Logo.svg" 
                       onChange={(e) => updateAssets({ logo: e.target.value })}
                       className="w-full px-3 py-1.5 bg-[#191d27] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                     />

@@ -117,14 +117,14 @@ const DEFAULT_SITE_CONTENT = {
     facebook: "維度影學 Cine Dimension",
     instagram: "",
     portaly: "https://portaly.cc/cinedimension",
-    logoUrl: "https://assets.cine-dimension.com/logo.JPG"
+    logoUrl: "https://assets.cine-dimension.com/Logo.svg"
   },
   site: {
     title: "維度影學 Cine Dimension",
-    logoUrl: "https://assets.cine-dimension.com/logo.JPG"
+    logoUrl: "https://assets.cine-dimension.com/Logo.svg"
   },
   assets: {
-    logo: "https://assets.cine-dimension.com/logo.JPG",
+    logo: "https://assets.cine-dimension.com/Logo.svg",
     founderImage: "https://assets.cine-dimension.com/avatar.JPG"
   },
   portfolio: DEFAULT_INITIAL_PORTFOLIO

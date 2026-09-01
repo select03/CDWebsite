@@ -61,10 +61,10 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
                 className="w-full h-full object-contain drop-shadow-sm p-0.5"
                 onError={(e) => {
                   const target = e.currentTarget;
-                  if (!target.src.includes('logo.jpg') && !target.src.includes('logo.png')) {
-                    target.src = 'https://assets.cine-dimension.com/logo.jpg';
-                  } else if (!target.src.includes('logo.png')) {
-                    target.src = 'https://assets.cine-dimension.com/logo.png';
+                  if (!target.src.includes('Logo.svg') && !target.src.includes('logo.svg')) {
+                    target.src = 'https://assets.cine-dimension.com/Logo.svg';
+                  } else if (!target.src.includes('logo.JPG')) {
+                    target.src = 'https://assets.cine-dimension.com/logo.JPG';
                   }
                 }}
                 referrerPolicy="no-referrer"

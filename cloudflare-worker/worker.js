@@ -131,7 +131,7 @@ const DEFAULT_SITE_CONTENT = {
     portaly: "https://portaly.cc/cinedimension"
   },
   assets: {
-    logo: "https://assets.cine-dimension.com/logo.JPG",
+    logo: "https://assets.cine-dimension.com/Logo.svg",
     founderImage: "https://assets.cine-dimension.com/avatar.JPG"
   },
   portfolio: DEFAULT_INITIAL_PORTFOLIO
@@ -274,7 +274,7 @@ async function handleGetContent(env) {
     
     // Auto-heal empty or broken logo URLs to official R2 CDN URL
     if (!content.assets.logo || !content.assets.logo.trim() || content.assets.logo.includes('/images/logo.svg')) {
-      content.assets.logo = "https://assets.cine-dimension.com/logo.JPG";
+      content.assets.logo = "https://assets.cine-dimension.com/Logo.svg";
     }
     if (!content.assets.founderImage || !content.assets.founderImage.trim() || content.assets.founderImage.includes('/images/avatar.jpeg')) {
       content.assets.founderImage = "https://assets.cine-dimension.com/avatar.JPG";
@@ -324,7 +324,7 @@ async function handleSaveContent(request, env) {
 
   if (!contentToSave.assets) contentToSave.assets = {};
   if (!contentToSave.assets.logo || !contentToSave.assets.logo.trim() || contentToSave.assets.logo.includes('/images/logo.svg')) {
-    contentToSave.assets.logo = "https://assets.cine-dimension.com/logo.JPG";
+    contentToSave.assets.logo = "https://assets.cine-dimension.com/Logo.svg";
   }
   if (!contentToSave.site) contentToSave.site = {};
   contentToSave.site.logoUrl = contentToSave.assets.logo;

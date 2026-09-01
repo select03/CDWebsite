@@ -15,7 +15,7 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
   showText = true,
   customLogo,
 }) => {
-  // Sanitize customLogo: ignore broken /images/logo.svg or empty strings, fallback to R2 logo.JPG
+  // Sanitize customLogo: ignore broken /images/logo.svg or empty strings, fallback to R2 Logo.svg
   const getInitialLogo = () => {
     if (
       customLogo &&
