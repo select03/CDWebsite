@@ -9,7 +9,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const { founderInfo } = useSiteData();
+  const { founderInfo, assets } = useSiteData();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -23,7 +23,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           
           {/* Brand Col */}
           <div className="md:col-span-5 space-y-3 text-left">
-            <CineDimensionLogo size="sm" showText={true} />
+            <CineDimensionLogo size="sm" showText={true} customLogo={assets?.logo} />
             <p className="text-stone-600 text-xs leading-relaxed max-w-sm pt-2">
               {founderInfo.title}。主張「Have Fun」樂趣學習哲學，結合手機隨手拍與 AI 工具，陪伴你輕鬆拍出屬於你的故事維度。
             </p>

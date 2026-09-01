@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PageView } from '../types';
 import { CineDimensionLogo } from './CineDimensionLogo';
+import { useData } from '../context/DataContext';
 import { Menu, X } from 'lucide-react';
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigate
 }) => {
+  const { assets } = useData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems: { id: PageView; label: string; enLabel: string }[] = [
@@ -41,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => handleNavClick('home')}
             className="group focus:outline-none flex items-center gap-2 shrink-0"
           >
-            <CineDimensionLogo size="sm" showText={true} />
+            <CineDimensionLogo size="sm" showText={true} customLogo={assets?.logo} />
           </button>
 
           {/* Editorial Desktop Nav */}

@@ -48,12 +48,15 @@ const DEFAULT_ASSETS: SiteAssets = {
   founderImage: STATIC_ASSETS.AVATAR
 };
 
-// Helper function to sanitize and normalize brand logo URL (strictly locked to /images/logo.svg)
+// Helper function to sanitize and normalize brand logo URL (supports dynamic R2 URLs with default fallback)
 function sanitizeLogo(logoUrl?: string): string {
+  if (logoUrl && typeof logoUrl === 'string' && logoUrl.trim() && !logoUrl.includes('assets/images/image.jpeg') && !logoUrl.endsWith('/image.jpeg')) {
+    return logoUrl.trim();
+  }
   return STATIC_ASSETS.LOGO;
 }
 
-// Helper function to sanitize and normalize founder avatar image URL (defaults to /images/avatar.jpeg)
+// Helper function to sanitize and normalize founder avatar image URL (supports dynamic R2 URLs with default fallback)
 function sanitizeFounderImage(imgUrl?: string): string {
   if (imgUrl && typeof imgUrl === 'string' && imgUrl.trim() && !imgUrl.includes('avatar.webp')) {
     return imgUrl.trim();

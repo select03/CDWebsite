@@ -55,7 +55,7 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
         <div className="mb-10 p-6 sm:p-8 rounded-2xl bg-[#EFECE6] border border-stone-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-[#F6F4EE] border border-stone-300 p-3 shadow-sm flex items-center justify-center shrink-0">
-              <CineDimensionLogo size="xl" showText={false} customLogo={STATIC_ASSETS.LOGO} />
+              <CineDimensionLogo size="xl" showText={false} customLogo={assets.logo || STATIC_ASSETS.LOGO} />
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">

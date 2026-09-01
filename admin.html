@@ -1,12 +1,1723 @@
-<!-- Redirect or Serve admin from public -->
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=/admin.html">
-  <script>window.location.href = '/admin.html';</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>維度影學 ｜ 雲端內容管理後台 (CineDimension CMS v4.0)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fbf9f5',
+              100: '#f6f2ea',
+              500: '#a3845b',
+              600: '#8c6843',
+              900: '#1a1815',
+            },
+            darkbg: '#0b0d11',
+            darkcard: '#141720',
+            darkborder: '#202634',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SortableJS for Drag & Drop Sorting on Mobile, Tablet & Desktop -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2b3245; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3e4860; }
+    
+    /* Touch Action for mobile/iPad drag */
+    .drag-handle { touch-action: none; cursor: grab; }
+    .drag-handle:active { cursor: grabbing; }
+    .sortable-ghost { opacity: 0.35; background: #1e2433 !important; border: 2px dashed #a3845b !important; }
+    
+    /* Smooth Transitions */
+    .tab-content { transition: opacity 0.2s ease-in-out; }
+  </style>
 </head>
-<body>
-  <p>正在載入管理後台，若未自動跳轉請 <a href="/admin.html">點擊此處</a>。</p>
+<body class="bg-[#0b0d11] text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-amber-600 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- 1. LOGIN / AUTH SCREEN OVERLAY -->
+  <!-- ========================================== -->
+  <div id="login-view" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b0d11]/95 backdrop-blur-xl">
+    <div class="w-full max-w-md bg-[#141720] border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+      
+      <!-- Ambient Glow -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-sky-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Brand Header -->
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 mx-auto flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-bold text-xl">
+          🎬
+        </div>
+        <h1 class="text-2xl font-bold tracking-wider text-white">維度影學 CMS</h1>
+        <p class="text-xs text-slate-400 tracking-wide">Cloudflare KV 雲端資料庫 ＆ R2 圖床後台</p>
+      </div>
+
+      <!-- Auth Form -->
+      <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleAuthSubmit();">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5" for="login-worker-url">
+            Worker API 網址 (Worker URL)
+          </label>
+          <div class="relative">
+            <i data-lucide="cloud" class="w-4 h-4 text-slate-400 absolute left-3 top-3.5"></i>
+            <input 
+              id="login-worker-url" 
+              type="url" 
+              placeholder="https://cinedimension-api.workers.dev (留空則使用同網域)"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#1a1e2a] border border-slate-700/70 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+            />
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">若與網站同網域轉發可直接留空。</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5" for="login-admin-secret">
+            管理員金鑰 (Admin Secret) *
+          </label>
+          <div class="relative">
+            <i data-lucide="key" class="w-4 h-4 text-slate-400 absolute left-3 top-3.5"></i>
+            <input 
+              id="login-admin-secret" 
+              type="password" 
+              required
+              placeholder="請輸入 Worker 設定的 ADMIN_SECRET (預設: admin888)"
+              class="w-full pl-10 pr-10 py-2.5 bg-[#1a1e2a] border border-slate-700/70 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+            />
+            <button type="button" onclick="togglePasswordVisibility('login-admin-secret')" class="absolute right-3 top-3 text-slate-400 hover:text-white">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="login-error-msg" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800/50 p-2.5 rounded-lg flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+          <span id="login-error-text">金鑰錯誤或無法連線至 Worker</span>
+        </div>
+
+        <button 
+          id="login-btn" 
+          type="submit" 
+          class="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center gap-2"
+        >
+          <span>連線進入 CMS 管理後台</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Direct Edit Mode -->
+        <button 
+          type="button" 
+          onclick="enterDirectEditMode()" 
+          class="w-full py-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
+        >
+          <i data-lucide="edit" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>免金鑰直接預覽與編輯 (本機暫存模式)</span>
+        </button>
+      </form>
+
+      <div class="text-center text-[11px] text-slate-500">
+        代碼、資料庫 (KV) 與圖床 (R2) 徹底解耦 ｜ 支援 iPad 平板與手機直覺操作
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. MAIN CMS DASHBOARD (When Authenticated) -->
+  <!-- ========================================== -->
+  <div id="dashboard-view" class="hidden flex-1 flex flex-col">
+    
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-[#12151e]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        
+        <!-- Left Brand & Status -->
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-slate-950 font-bold text-sm shadow-md">
+            🎬
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white text-sm sm:text-base tracking-wide">維度影學 CMS</span>
+              <span id="dirty-badge" class="hidden px-2 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full">
+                有未發佈變更
+              </span>
+            </div>
+            <p id="header-status-text" class="text-[11px] text-emerald-400 hidden sm:flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Cloudflare KV & R2 直連中
+            </p>
+          </div>
+        </div>
+
+        <!-- Right Action Controls -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Worker Settings Button -->
+          <button 
+            onclick="openSettingsModal()" 
+            title="查看 / 更改 Worker 代理網址與金鑰"
+            class="p-2 text-slate-400 hover:text-amber-400 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-xs transition-colors flex items-center gap-1.5"
+          >
+            <i data-lucide="settings" class="w-4 h-4"></i>
+            <span class="hidden lg:inline">API 設定</span>
+          </button>
+
+          <!-- Refresh Button -->
+          <button 
+            onclick="loadContentFromKV()" 
+            title="從 Cloudflare KV 重新同步最新資料"
+            class="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-xs transition-colors flex items-center gap-1.5"
+          >
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span class="hidden md:inline">同步 KV 資料</span>
+          </button>
+
+          <!-- Publish Button -->
+          <button 
+            id="publish-btn" 
+            onclick="handlePublishContent()" 
+            class="px-3.5 sm:px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-lg text-xs sm:text-sm shadow-lg shadow-emerald-900/30 transition-all flex items-center gap-2"
+          >
+            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+            <span>一鍵發佈至 KV</span>
+          </button>
+
+          <!-- User / Logout -->
+          <button 
+            onclick="handleLogout()" 
+            title="登出" 
+            class="p-2 text-rose-400 hover:text-rose-300 bg-rose-950/30 hover:bg-rose-950/60 border border-rose-900/40 rounded-lg transition-colors"
+          >
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Publishing Progress Bar -->
+    <div id="publish-progress-bar" class="hidden h-1 w-full bg-slate-800 overflow-hidden relative">
+      <div id="publish-progress-inner" class="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-400 w-0 transition-all duration-300"></div>
+    </div>
+
+    <!-- Main Content Body -->
+    <div class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col md:flex-row gap-6">
+      
+      <!-- Sidebar Navigation -->
+      <aside class="w-full md:w-64 shrink-0 space-y-3">
+        <div class="bg-[#141720] border border-slate-800/80 rounded-2xl p-2 sm:p-3 space-y-1">
+          <button 
+            onclick="switchTab('tab-portfolio')" 
+            id="btn-tab-portfolio" 
+            class="tab-btn w-full px-3 py-2.5 rounded-xl text-left text-xs sm:text-sm font-semibold flex items-center gap-3 bg-amber-500/10 text-amber-300 border border-amber-500/30 transition-all"
+          >
+            <i data-lucide="film" class="w-4 h-4 text-amber-400"></i>
+            <span>作品集管理 (<span id="sidebar-portfolio-count">6</span> 項)</span>
+          </button>
+
+          <button 
+            onclick="switchTab('tab-assets')" 
+            id="btn-tab-assets" 
+            class="tab-btn w-full px-3 py-2.5 rounded-xl text-left text-xs sm:text-sm font-semibold flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all"
+          >
+            <i data-lucide="image" class="w-4 h-4"></i>
+            <span>圖床與素材 (R2 Assets)</span>
+          </button>
+
+          <button 
+            onclick="switchTab('tab-siteinfo')" 
+            id="btn-tab-siteinfo" 
+            class="tab-btn w-full px-3 py-2.5 rounded-xl text-left text-xs sm:text-sm font-semibold flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all"
+          >
+            <i data-lucide="globe" class="w-4 h-4"></i>
+            <span>網站基本設定 (Meta)</span>
+          </button>
+
+          <button 
+            onclick="switchTab('tab-leads')" 
+            id="btn-tab-leads" 
+            class="tab-btn w-full px-3 py-2.5 rounded-xl text-left text-xs sm:text-sm font-semibold flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all"
+          >
+            <i data-lucide="inbox" class="w-4 h-4"></i>
+            <span>客戶預約諮詢單 (Leads)</span>
+          </button>
+        </div>
+
+        <!-- Architecture Summary Card -->
+        <div class="bg-[#141720] border border-slate-800/80 rounded-2xl p-4 text-xs space-y-2.5 text-slate-400">
+          <div class="flex items-center justify-between text-slate-300 font-semibold">
+            <span class="flex items-center gap-1.5 text-xs text-white">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>架構解耦狀態</span>
+            </span>
+            <span class="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              正常運作
+            </span>
+          </div>
+          <div class="text-[11px] font-mono space-y-1.5 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60">
+            <p class="flex justify-between"><span class="text-slate-400">程式代碼:</span> <span class="text-sky-300 font-medium">GitHub (Code Only)</span></p>
+            <p class="flex justify-between"><span class="text-slate-400">網站資料庫:</span> <span class="text-emerald-300 font-medium">Cloudflare KV</span></p>
+            <p class="flex justify-between"><span class="text-slate-400">圖床儲存:</span> <span class="text-amber-300 font-medium">Cloudflare R2</span></p>
+            <p class="flex justify-between"><span class="text-slate-400">動態影音:</span> <span class="text-rose-300 font-medium">YouTube 4K自動抓圖</span></p>
+          </div>
+          <div class="pt-1">
+            <button onclick="restoreDefaultPortfolio()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition-colors flex items-center justify-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3 h-3 text-amber-400"></i>
+              <span>重設為 6 大經典作品集</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Workspace Panels -->
+      <main class="flex-1 min-w-0 space-y-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: 作品集管理 (PORTFOLIO CRUD & SORT) -->
+        <!-- ========================================== -->
+        <section id="tab-portfolio" class="tab-content space-y-4">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#141720] border border-slate-800/80 p-4 rounded-2xl">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>作品集項目清單</span>
+                <span id="portfolio-count-badge" class="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-300 rounded-full font-bold border border-amber-500/40">6 項</span>
+              </h2>
+              <p class="text-xs text-slate-400">支援 YouTube 封面自動抓取與 R2 自訂圖片上傳；按住 ⠿ 可拖曳排序</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button 
+                onclick="restoreDefaultPortfolio()" 
+                class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-amber-500/30 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                title="載入 6 大代表作（嘉義農會、旗津隨拍、即墨古城、樂團MV、Shell汽車App、婚禮電影）"
+              >
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                <span>載入 6 大經典作品</span>
+              </button>
+              <button 
+                onclick="openPortfolioModal()" 
+                class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-amber-600/20 transition-all"
+              >
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>新增作品項目</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Draggable Portfolio List Container -->
+          <div id="portfolio-list" class="space-y-3"></div>
+
+          <!-- Empty State -->
+          <div id="portfolio-empty-state" class="hidden py-12 px-4 text-center bg-[#141720] border border-dashed border-slate-700/80 rounded-2xl space-y-4">
+            <div class="w-14 h-14 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto text-amber-400">
+              <i data-lucide="film" class="w-7 h-7"></i>
+            </div>
+            <div class="max-w-md mx-auto space-y-1">
+              <h3 class="text-base font-bold text-white">目前雲端資料庫尚無作品項目</h3>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                您可以點擊下方按鈕一鍵匯入「6 大經典代表作」，載入後可自由修改並點擊上方「一鍵發佈至 KV」。
+              </p>
+            </div>
+            <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
+              <button 
+                onclick="restoreDefaultPortfolio()" 
+                class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 flex items-center gap-2"
+              >
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>✨ 一鍵載入 6 大經典作品集</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: 圖床與素材 (R2 ASSETS) -->
+        <!-- ========================================== -->
+        <section id="tab-assets" class="tab-content hidden space-y-6">
+          <div class="bg-[#141720] border border-slate-800/80 p-4 rounded-2xl space-y-1">
+            <h2 class="text-lg font-bold text-white">全域視覺與圖床資產管理 (Cloudflare R2)</h2>
+            <p class="text-xs text-slate-400">上傳圖片將自動壓縮並寫入 Cloudflare R2 雲端圖床，完全不佔用 GitHub 倉庫空間。</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Asset 1: Brand Logo -->
+            <div class="bg-[#141720] border border-slate-800/80 rounded-2xl p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                  <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                  <span>品牌 Logo 標誌 (site.logoUrl)</span>
+                </h3>
+                <span class="text-[11px] text-slate-400">SVG / PNG 向量或透明圖</span>
+              </div>
+
+              <div class="h-36 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
+                <img id="preview-asset-logo" src="" alt="Logo" class="max-h-full max-w-full object-contain hidden" />
+                <div id="empty-asset-logo" class="text-center text-slate-500 text-xs flex flex-col items-center gap-1">
+                  <i data-lucide="image" class="w-8 h-8 text-slate-600"></i>
+                  <span>使用官方預設向量 Logo</span>
+                </div>
+              </div>
+
+              <!-- Upload Controls -->
+              <div class="space-y-2.5">
+                <div class="flex gap-2">
+                  <input type="file" id="input-file-logo" accept="image/*" class="hidden" onchange="handleAssetUpload(event, 'logo')" />
+                  <button 
+                    onclick="document.getElementById('input-file-logo').click()" 
+                    class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-white font-medium flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>上傳至 Cloudflare R2</span>
+                  </button>
+                  <button 
+                    onclick="resetToDefaultLogo()" 
+                    title="恢復官方預設向量 Logo"
+                    class="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-amber-400 font-medium flex items-center justify-center gap-1 transition-colors whitespace-nowrap"
+                  >
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                    <span>官方預設</span>
+                  </button>
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">手動貼上 CDN 圖片網址 (URL)：</label>
+                  <input 
+                    type="url" 
+                    id="asset-url-logo" 
+                    placeholder="https://assets.yourdomain.com/images/..." 
+                    oninput="handleAssetUrlChange('logo', this.value)"
+                    class="w-full px-3 py-1.5 bg-[#191d2a] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Asset 2: Founder Portrait / Avatar -->
+            <div class="bg-[#141720] border border-slate-800/80 rounded-2xl p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                  <i data-lucide="user" class="w-4 h-4 text-amber-400"></i>
+                  <span>創辦人形象照 (founder.avatarUrl)</span>
+                </h3>
+                <span class="text-[11px] text-slate-400">JPG / PNG / WebP</span>
+              </div>
+
+              <div class="h-36 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
+                <img id="preview-asset-founder" src="" alt="Portrait" class="max-h-full max-w-full object-contain rounded-lg hidden" />
+                <div id="empty-asset-founder" class="text-center text-slate-500 text-xs flex flex-col items-center gap-1">
+                  <i data-lucide="user" class="w-8 h-8 text-slate-600"></i>
+                  <span>使用預設悟哥肖像</span>
+                </div>
+              </div>
+
+              <!-- Upload Controls -->
+              <div class="space-y-2.5">
+                <div class="flex gap-2">
+                  <input type="file" id="input-file-founder" accept="image/*" class="hidden" onchange="handleAssetUpload(event, 'founderImage')" />
+                  <button 
+                    onclick="document.getElementById('input-file-founder').click()" 
+                    class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-white font-medium flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>上傳至 Cloudflare R2</span>
+                  </button>
+                  <button 
+                    onclick="resetToDefaultAvatar()" 
+                    title="恢復創辦人官方照片"
+                    class="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-amber-400 font-medium flex items-center justify-center gap-1 transition-colors whitespace-nowrap"
+                  >
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                    <span>官方預設</span>
+                  </button>
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">手動貼上 CDN 圖片網址 (URL)：</label>
+                  <input 
+                    type="url" 
+                    id="asset-url-founder" 
+                    placeholder="https://assets.yourdomain.com/images/..." 
+                    oninput="handleAssetUrlChange('founderImage', this.value)"
+                    class="w-full px-3 py-1.5 bg-[#191d2a] border border-slate-700/70 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: 網站基本設定 (SITE META) -->
+        <!-- ========================================== -->
+        <section id="tab-siteinfo" class="tab-content hidden space-y-6">
+          <div class="bg-[#141720] border border-slate-800/80 p-5 rounded-2xl space-y-4">
+            <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3">基本品牌資訊與標語</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">網站品牌名稱</label>
+                <input 
+                  id="meta-title" 
+                  type="text" 
+                  oninput="markDirty()"
+                  class="w-full px-3 py-2 bg-[#191d2a] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">聯絡信箱 (Email)</label>
+                <input 
+                  id="meta-email" 
+                  type="email" 
+                  oninput="markDirty()"
+                  class="w-full px-3 py-2 bg-[#191d2a] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">核心標語 / Slogan</label>
+              <input 
+                id="meta-tagline" 
+                type="text" 
+                oninput="markDirty()"
+                class="w-full px-3 py-2 bg-[#191d2a] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+
+          <!-- Social Links -->
+          <div class="bg-[#141720] border border-slate-800/80 p-5 rounded-2xl space-y-4">
+            <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3">官方社群管道連結</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">YouTube 頻道</label>
+                <input 
+                  id="meta-youtube" 
+                  type="text" 
+                  placeholder="@cinedimens"
+                  oninput="markDirty()"
+                  class="w-full px-3 py-2 bg-[#191d2a] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Facebook 粉絲團</label>
+                <input 
+                  id="meta-facebook" 
+                  type="text" 
+                  placeholder="維度影學 Cine Dimension"
+                  oninput="markDirty()"
+                  class="w-full px-3 py-2 bg-[#191d2a] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Instagram 帳號</label>
+                <input 
+                  id="meta-instagram" 
+                  type="text" 
+                  placeholder="@cinedimension"
+                  oninput="markDirty()"
+                  class="w-full px-3 py-2 bg-[#191d2a] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: 客戶預約諮詢單 (LEADS VIEWER) -->
+        <!-- ========================================== -->
+        <section id="tab-leads" class="tab-content hidden space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#141720] border border-slate-800/80 p-4 rounded-2xl">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>客戶預約諮詢單</span>
+                <span id="leads-count-badge" class="px-2 py-0.5 text-xs bg-emerald-500/20 text-emerald-300 rounded-full font-bold border border-emerald-500/40">0 筆</span>
+              </h2>
+              <p class="text-xs text-slate-400">訪客於官網提交的諮詢表單，儲存於 Cloudflare KV 並已同步推播至 Telegram。</p>
+            </div>
+            <div>
+              <button 
+                onclick="loadLeadsFromKV()" 
+                class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>重新整理名單</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="leads-list-container" class="space-y-3">
+            <div class="p-8 text-center bg-[#141720] border border-slate-800 rounded-2xl text-slate-500 text-xs">
+              正在讀取詢問單列表...
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. COMPREHENSIVE PORTFOLIO MODAL -->
+  <!-- ========================================== -->
+  <div id="portfolio-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
+    <div class="w-full max-w-2xl bg-[#141720] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-title" class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="film" class="w-5 h-5 text-amber-400"></i>
+          <span>編輯作品項目</span>
+        </h3>
+        <button onclick="closePortfolioModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="portfolio-form" onsubmit="event.preventDefault(); savePortfolioModalItem();" class="space-y-4">
+        <input type="hidden" id="modal-item-index" value="-1" />
+        <input type="hidden" id="modal-item-id" value="" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-1" for="modal-input-title">作品標題 *</label>
+            <input 
+              id="modal-input-title" 
+              type="text" 
+              required
+              placeholder="例如：Shell 喜力汽車年度形象廣告"
+              class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-1" for="modal-input-category">分類類別 *</label>
+            <input 
+              id="modal-input-category" 
+              type="text" 
+              required
+              placeholder="例如：商業形象片 / 音樂MV / 婚禮電影"
+              class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1" for="modal-input-year">年份 / 製作期</label>
+            <input 
+              id="modal-input-year" 
+              type="text" 
+              placeholder="例如：2024"
+              class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1" for="modal-input-role">擔任職掌 (Role)</label>
+            <input 
+              id="modal-input-role" 
+              type="text" 
+              placeholder="例如：導演 ｜ 攝影指導"
+              class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1" for="modal-input-client">專案客戶 / 出品</label>
+            <input 
+              id="modal-input-client" 
+              type="text" 
+              placeholder="例如：台灣殼牌 Shell"
+              class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-300 font-semibold mb-1" for="modal-input-desc">作品簡介與敘事重點</label>
+          <textarea 
+            id="modal-input-desc" 
+            rows="3" 
+            placeholder="請簡述專案亮點、拍攝手法或客戶訴求..."
+            class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1" for="modal-input-tags">分類標籤 Tags (以逗號分隔)</label>
+            <input 
+              id="modal-input-tags" 
+              type="text" 
+              placeholder="例如：手機攝影, 商業廣告, AI影音"
+              class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1" for="modal-input-video">YouTube 影音連結 (完整/短網址/Shorts)</label>
+            <input 
+              id="modal-input-video" 
+              type="url" 
+              placeholder="例如：https://youtu.be/_JjmH05QYlU"
+              oninput="handleModalVideoUrlChange(this.value)"
+              class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1" for="modal-input-highlights">專案亮點特色 Highlights (每行一點)</label>
+          <textarea 
+            id="modal-input-highlights" 
+            rows="2" 
+            placeholder="例如：
+輔導超過 50 位青農產出自家短影音
+滿意度高達 98%，學員觸及率顯著提升"
+            class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+          ></textarea>
+        </div>
+
+        <!-- Cover Image & YouTube Auto-fetch -->
+        <div class="space-y-3 pt-2 border-t border-slate-800">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <label class="block text-xs text-slate-300 font-semibold">作品封面縮圖 (Cover Image)</label>
+            <label class="flex items-center gap-1.5 text-xs text-amber-400 font-medium cursor-pointer">
+              <input 
+                type="checkbox" 
+                id="modal-auto-yt-thumb" 
+                checked 
+                onchange="handleAutoYtThumbToggle(this.checked)"
+                class="rounded border-slate-700 text-amber-600 focus:ring-amber-500 bg-slate-800"
+              />
+              <span>自動擷取 YouTube 高畫質封面 (預設開啟)</span>
+            </label>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div class="w-28 h-20 rounded-lg bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center relative">
+              <img id="modal-preview-image" src="" class="w-full h-full object-cover hidden" />
+              <div id="modal-empty-image" class="text-[11px] text-slate-600 flex flex-col items-center">
+                <i data-lucide="image" class="w-6 h-6 text-slate-700"></i>
+                <span>無圖片</span>
+              </div>
+            </div>
+
+            <div class="flex-1 w-full space-y-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <input type="file" id="modal-file-upload" accept="image/*" class="hidden" onchange="handleModalImageUpload(event)" />
+                <button 
+                  type="button" 
+                  onclick="document.getElementById('modal-file-upload').click()"
+                  class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-white flex items-center gap-1.5 transition-colors"
+                >
+                  <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>上傳自訂封面至 R2</span>
+                </button>
+                <button 
+                  type="button" 
+                  onclick="triggerAutoYouTubeThumbExtraction()"
+                  class="px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-300 flex items-center gap-1"
+                >
+                  <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i>
+                  <span>立即抓取 YT 封面</span>
+                </button>
+              </div>
+              <input 
+                id="modal-input-image" 
+                type="text" 
+                placeholder="圖片 URL (https://... 或 R2 網址)"
+                oninput="updateModalImagePreview(this.value)"
+                class="w-full px-3 py-1.5 bg-[#1a1e2a] border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button 
+            type="button" 
+            onclick="closePortfolioModal()"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-300 transition-colors"
+          >
+            取消
+          </button>
+          <button 
+            type="submit" 
+            class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-amber-600/20 transition-all flex items-center gap-1.5"
+          >
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>儲存作品項目</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md bg-[#141720] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="settings" class="w-4 h-4 text-amber-400"></i>
+          <span>Worker API 與金鑰設定</span>
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">Worker API 網址：</label>
+          <input 
+            id="cfg-modal-worker-url" 
+            type="url" 
+            placeholder="https://cinedimension-api.workers.dev" 
+            class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-amber-500"
+          />
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">管理員金鑰 (Admin Secret)：</label>
+          <input 
+            id="cfg-modal-admin-secret" 
+            type="password" 
+            placeholder="ADMIN_SECRET" 
+            class="w-full px-3 py-2 bg-[#1a1e2a] border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-amber-500"
+          />
+        </div>
+        <p class="text-slate-400 leading-relaxed text-[11px]">
+          • 資料庫 (KV) 與圖床 (R2) 皆由 Worker 邊緣端託管，修改後立即生效。
+        </p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 bg-slate-800 rounded-xl text-xs text-slate-300">關閉</button>
+        <button onclick="saveSettingsFromModal()" class="px-4 py-2 bg-amber-600 text-slate-950 font-bold rounded-xl text-xs">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 max-w-sm pointer-events-none"></div>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT LOGIC -->
+  <!-- ========================================== -->
+  <script>
+    // 預設 6 大經典代表作
+    const DEFAULT_PORTFOLIO_ITEMS = [
+      {
+        id: "zhuqi-farmers-association",
+        title: "嘉義縣竹崎地區農會「手機影音實戰班」",
+        category: "教育培訓與在地品牌",
+        clientOrProject: "嘉義縣竹崎地區農會",
+        year: "2023-2024",
+        description: "擔任主要講師，帶領在地青農與電商學員，運用手機拍攝高品質農特產品特寫與行銷短影片，打造在地農業數位轉型標竿。",
+        role: "影音課程總教練",
+        tags: ["手機攝影", "農會內訓", "AI影音應用", "品牌行銷"],
+        image: "https://img.youtube.com/vi/_JjmH05QYlU/maxresdefault.jpg",
+        videoUrl: "https://youtu.be/_JjmH05QYlU",
+        highlights: [
+          "輔導超過 50 位青農產出自家水果短影片",
+          "滿意度高達 98%，學員後續觸及率提升顯著"
+        ]
+      },
+      {
+        id: "kaohsiung-qijin-travel-film",
+        title: "高雄旗津「用手機凝結老友情誼與港都光影」",
+        category: "手機錄影創作 / 旅行生活",
+        clientOrProject: "課後隨拍創作",
+        year: "2023",
+        description: "走訪高雄，與多年老友搭上輕軌漫遊旗津。在沙灘、陽光與海鮮美味的交錯間，不帶笨重器材，純粹以手機運鏡與自然光影，將久違重逢的笑聲與微醺時光，轉化為具備電影質感的旅行影像紀錄。",
+        role: "手機動態攝影師 / 剪輯後製",
+        tags: ["手機錄影", "旅行紀錄", "高雄旗津", "動態運鏡"],
+        image: "https://img.youtube.com/vi/eFJcTN9lt9s/maxresdefault.jpg",
+        videoUrl: "https://youtu.be/eFJcTN9lt9s",
+        highlights: [
+          "不帶笨重器材，純粹以手機運鏡與自然光影捕捉老友情誼",
+          "將沙灘、陽光與港都漫遊轉化為具備電影質感的旅行影像紀錄"
+        ]
+      },
+      {
+        id: "jimo-ancient-city-film",
+        title: "山東即墨古城「千年文脈與現代鏡頭的對話」",
+        category: "人文景觀錄影 / 建築光影",
+        clientOrProject: "人文旅讀影像",
+        year: "2019",
+        description: "走訪擁有 1400 餘年建城史的山東即墨古城。穿梭於古縣衙、文廟、牌坊與考院之間，透過細膩的手持運鏡與光影捕捉，將「一城、兩街、十景、十三坊」的磅礴格局收錄鏡底，重現古人科舉與生活的歷史厚度。",
+        role: "動態錄影師 / 視覺企劃與剪輯",
+        tags: ["建築攝影", "人文紀錄", "即墨古城", "動態運鏡"],
+        image: "https://img.youtube.com/vi/G09UZtpbyN0/maxresdefault.jpg",
+        videoUrl: "https://youtu.be/G09UZtpbyN0",
+        highlights: [
+          "細膩手持運鏡與光影捕捉，收錄「一城、兩街、十景、十三坊」磅礴格局",
+          "重現 1400 餘年古城歷史厚度與文脈風華"
+        ]
+      },
+      {
+        id: "band-mv-music-video",
+        title: "樂團 MV《說不愛就不愛》",
+        category: "音樂錄影帶 MV / 電影感敘事",
+        clientOrProject: "不寂寞樂團 x 阿京",
+        year: "2018",
+        description: "一手包辦現場攝影、氛圍燈光與剪輯後製，運用極致的情緒光影與強烈節奏感剪輯，完美詮釋歌曲的情感沉澱與故事張力。",
+        role: "導演 / 攝影師 / 剪輯師",
+        tags: ["音樂MV", "情緒調色", "節奏剪輯", "電影感視覺"],
+        image: "https://img.youtube.com/vi/5p7nMVHx-AE/maxresdefault.jpg",
+        videoUrl: "https://youtu.be/5p7nMVHx-AE?si=BHl1KkzmHCa2CxKw",
+        highlights: [
+          "暗色調微光鏡頭極具電影氛圍",
+          "流暢的節奏切換使歌曲觀看體驗大幅提升"
+        ]
+      },
+      {
+        id: "shell-lubricants-ad",
+        title: "Shell 喜力汽車｜官方車輛保修 App 操作指南與情境形象引導片",
+        category: "商業形象片 / App 功能情境演示",
+        clientOrProject: "台灣殼牌 Shell Lubricants & Digital Solutions",
+        year: "2015",
+        description: "為全球潤滑油領導品牌 Shell 喜力汽車量身打造「車輛保修 App 官方操作與情境指南」。透過車主保養實境與清晰流暢的 App 介面操作演示，將繁複的預約維修、履歷查詢與保養檢測流程轉化為直覺易懂的影像語言，有效降低車主操作門檻，引導用戶精準掌握 App 核心功能，全面提升品牌數位服務體驗與滿意度。",
+        role: "動態導演 / 商業動態攝影 / 介面情境演示指導",
+        tags: ["商業形象片", "App操作指南", "情境演示", "保修實境", "降低學習門檻"],
+        image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
+        videoUrl: "",
+        highlights: [
+          "實境操作無縫結合：將保修廠情境與手機 App 介面無縫串聯",
+          "降低學習門檻：以電影感光影與精準節奏演示，將複雜工具型 App 轉化為生動直覺的導覽體驗"
+        ]
+      },
+      {
+        id: "wedding-films-collection",
+        title: "婚禮團隊 - 上百場溫暖婚禮電影紀錄",
+        category: "婚禮電影記錄 / 人像紀實",
+        clientOrProject: "百位新人人生大事紀錄",
+        year: "2006-2020",
+        description: "在極高壓、不可逆的現場環境下捕捉最真摯的人情溫度，運用敏銳的鏡頭語言與光影美學留下永恆的感動瞬間。",
+        role: "資深攝影師 / 動態錄影師",
+        tags: ["婚禮紀錄", "人像光影", "情緒捕捉", "現場實戰"],
+        image: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+        videoUrl: "https://www.youtube.com/watch?v=owTBrg-aBhE&list=PL8OpV9U_sLi90w5HHO3AVOY0FBn4LYHsx&index=2",
+        highlights: [
+          "跨越靜態至動態錄影百場實戰經驗",
+          "深厚的人像情感引導與自然光影敏銳度"
+        ]
+      }
+    ];
+
+    // App State
+    let adminSecret = localStorage.getItem('cms_admin_secret') || '';
+    let workerApiUrl = localStorage.getItem('cms_worker_url') || '';
+    let currentContent = {
+      siteInfo: {
+        title: "維度影學 Cine Dimension",
+        tagline: "Have Fun 享受創作 ｜ 用手機拍出真實的電影感",
+        email: "select03@gmail.com",
+        youtube: "@cinedimens",
+        facebook: "維度影學 Cine Dimension",
+        instagram: "",
+        portaly: "https://portaly.cc/cinedimension"
+      },
+      assets: {
+        logo: "",
+        founderImage: ""
+      },
+      portfolio: JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO_ITEMS))
+    };
+    let isDirty = false;
+    let sortableInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      
+      const savedWorkerUrl = localStorage.getItem('cms_worker_url');
+      if (savedWorkerUrl) {
+        document.getElementById('login-worker-url').value = savedWorkerUrl;
+        document.getElementById('cfg-modal-worker-url').value = savedWorkerUrl;
+      }
+      const savedSecret = localStorage.getItem('cms_admin_secret');
+      if (savedSecret) {
+        document.getElementById('login-admin-secret').value = savedSecret;
+        document.getElementById('cfg-modal-admin-secret').value = savedSecret;
+      }
+
+      if (adminSecret) {
+        showDashboard();
+      } else {
+        adminSecret = 'admin888';
+        showDashboard();
+      }
+    });
+
+    // ==========================================
+    // AUTHENTICATION
+    // ==========================================
+    function togglePasswordVisibility(inputId) {
+      const el = document.getElementById(inputId);
+      el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
+    function getApiBase() {
+      const urlInput = document.getElementById('login-worker-url')?.value?.trim() || workerApiUrl;
+      return (urlInput || '').replace(/\/+$/, '');
+    }
+
+    function getAuthHeaders() {
+      const secret = adminSecret || localStorage.getItem('cms_admin_secret') || 'admin888';
+      return {
+        'Authorization': `Bearer ${secret}`
+      };
+    }
+
+    function handleAuthSubmit() {
+      const url = document.getElementById('login-worker-url').value.trim();
+      const secret = document.getElementById('login-admin-secret').value.trim();
+
+      workerApiUrl = url;
+      adminSecret = secret;
+      localStorage.setItem('cms_worker_url', url);
+      localStorage.setItem('cms_admin_secret', secret);
+
+      showDashboard();
+      showToast('已連線至 CMS 管理後台！', 'success');
+      loadContentFromKV();
+    }
+
+    function enterDirectEditMode() {
+      adminSecret = 'local_edit_mode';
+      showDashboard();
+      showToast('已進入本機編輯模式，可自由預覽與調整 6 大作品集！', 'info');
+    }
+
+    function handleLogout() {
+      if (isDirty && !confirm('您有未發佈的變更，確定要登出嗎？')) return;
+      adminSecret = '';
+      localStorage.removeItem('cms_admin_secret');
+      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('dashboard-view').classList.add('hidden');
+      showToast('已安全登出', 'info');
+    }
+
+    function showDashboard() {
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('dashboard-view').classList.remove('hidden');
+      renderAllPanels();
+      initSortable();
+      loadContentFromKV();
+    }
+
+    function openSettingsModal() {
+      document.getElementById('cfg-modal-worker-url').value = workerApiUrl || localStorage.getItem('cms_worker_url') || '';
+      document.getElementById('cfg-modal-admin-secret').value = adminSecret || localStorage.getItem('cms_admin_secret') || '';
+      document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    function saveSettingsFromModal() {
+      const url = document.getElementById('cfg-modal-worker-url').value.trim();
+      const secret = document.getElementById('cfg-modal-admin-secret').value.trim();
+      workerApiUrl = url;
+      adminSecret = secret;
+      localStorage.setItem('cms_worker_url', url);
+      localStorage.setItem('cms_admin_secret', secret);
+      closeSettingsModal();
+      showToast('API 設定已儲存', 'success');
+      loadContentFromKV();
+    }
+
+    // ==========================================
+    // DATA SYNC & KV ENGINE
+    // ==========================================
+    async function loadContentFromKV() {
+      const apiBase = getApiBase();
+      showToast('正在從 Cloudflare KV 同步最新資料...', 'info');
+
+      try {
+        const timestamp = Date.now();
+        const url = apiBase ? `${apiBase}/api/content?_t=${timestamp}` : `/api/content?_t=${timestamp}`;
+        const res = await fetch(url, { cache: 'no-store' });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.content) {
+            currentContent = data.content;
+            if (!Array.isArray(currentContent.portfolio) || currentContent.portfolio.length === 0) {
+              currentContent.portfolio = JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO_ITEMS));
+            }
+            if (!currentContent.assets) currentContent.assets = {};
+            if (!currentContent.siteInfo) currentContent.siteInfo = {};
+            renderAllPanels();
+            setClean();
+            showToast('已同步最新 Cloudflare KV 資料！', 'success');
+          }
+        }
+      } catch (err) {
+        console.warn('KV Load fallback to default:', err);
+      }
+    }
+
+    function renderAllPanels() {
+      renderPortfolioList();
+      renderAssetsPanel();
+      renderSiteInfoPanel();
+      lucide.createIcons();
+    }
+
+    function restoreDefaultPortfolio() {
+      if (!currentContent.portfolio || currentContent.portfolio.length === 0 || confirm('確定要載入預設的 6 大經典代表作嗎？')) {
+        currentContent.portfolio = JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO_ITEMS));
+        markDirty();
+        renderPortfolioList();
+        showToast('🎉 已成功載入 6 大經典代表作！請點擊上方「一鍵發佈至 KV」保存', 'success');
+      }
+    }
+
+    // ==========================================
+    // TAB SWITCHING
+    // ==========================================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-amber-500/10', 'text-amber-300', 'border', 'border-amber-500/30');
+        btn.classList.add('text-slate-400');
+      });
+
+      document.getElementById(tabId)?.classList.remove('hidden');
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-amber-500/10', 'text-amber-300', 'border', 'border-amber-500/30');
+        activeBtn.classList.remove('text-slate-400');
+      }
+      if (tabId === 'tab-leads') {
+        loadLeadsFromKV();
+      }
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // PORTFOLIO CRUD & SORTABLE
+    // ==========================================
+    function initSortable() {
+      const container = document.getElementById('portfolio-list');
+      if (!container) return;
+      if (sortableInstance) sortableInstance.destroy();
+
+      sortableInstance = new Sortable(container, {
+        handle: '.drag-handle',
+        animation: 180,
+        ghostClass: 'sortable-ghost',
+        onEnd: () => {
+          const newOrderIds = Array.from(container.children).map(el => el.dataset.id);
+          currentContent.portfolio.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
+          markDirty();
+        }
+      });
+    }
+
+    function renderPortfolioList() {
+      const container = document.getElementById('portfolio-list');
+      const emptyState = document.getElementById('portfolio-empty-state');
+      const countBadge = document.getElementById('portfolio-count-badge');
+      const sidebarBadge = document.getElementById('sidebar-portfolio-count');
+      const items = currentContent.portfolio || [];
+
+      if (countBadge) countBadge.innerText = `${items.length} 項`;
+      if (sidebarBadge) sidebarBadge.innerText = `${items.length}`;
+
+      if (items.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = items.map((item, index) => {
+        const coverSrc = item.image || (item.videoUrl ? getYouTubeThumbnail(item.videoUrl) : '') || 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80';
+        return `
+        <div data-id="${item.id || index}" class="bg-[#141720] hover:bg-[#181d29] border border-slate-800/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
+          <div class="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+            <button type="button" class="drag-handle p-1.5 text-slate-500 hover:text-amber-400 touch-none shrink-0" title="按住拖曳排序">
+              <i data-lucide="grip-vertical" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Thumbnail -->
+            <div class="w-16 h-16 sm:w-20 sm:h-16 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center relative">
+              <img src="${coverSrc}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80';" class="w-full h-full object-cover" />
+              ${item.videoUrl ? `<span class="absolute bottom-1 right-1 bg-red-600 text-white p-0.5 rounded text-[9px]"><i data-lucide="play" class="w-2.5 h-2.5"></i></span>` : ''}
+            </div>
+
+            <!-- Content Meta -->
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  ${item.year || '2024'}
+                </span>
+                <span class="text-xs text-slate-400 font-medium">${item.category || '精選專案'}</span>
+                ${item.clientOrProject ? `<span class="text-[11px] text-slate-500 hidden md:inline">· ${item.clientOrProject}</span>` : ''}
+              </div>
+              <h4 class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">${item.title || '未命名作品'}</h4>
+              <p class="text-xs text-slate-400 line-clamp-1 pt-0.5">${item.role ? `<span class="text-amber-400/80 font-medium">${item.role}</span> — ` : ''}${item.description || ''}</p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+            <button onclick="editPortfolioItem(${index})" class="px-3 py-1.5 text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors" title="編輯作品內容與圖片">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>編輯</span>
+            </button>
+            <button onclick="duplicatePortfolioItem(${index})" class="p-2 text-slate-400 hover:text-sky-300 bg-slate-800/60 hover:bg-slate-700 rounded-lg text-xs transition-colors" title="複製項目">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deletePortfolioItem(${index})" class="p-2 text-rose-400 hover:text-rose-300 bg-rose-950/30 hover:bg-rose-900/50 rounded-lg text-xs transition-colors" title="刪除">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function openPortfolioModal(item = null, index = -1) {
+      document.getElementById('modal-item-index').value = index;
+      document.getElementById('modal-item-id').value = item?.id || `proj_${Date.now()}`;
+      document.getElementById('modal-input-title').value = item?.title || '';
+      document.getElementById('modal-input-category').value = item?.category || '';
+      document.getElementById('modal-input-year').value = item?.year || '2024';
+      document.getElementById('modal-input-role').value = item?.role || '導演 ｜ 攝影指導';
+      document.getElementById('modal-input-client').value = item?.clientOrProject || '';
+      document.getElementById('modal-input-desc').value = item?.description || '';
+      document.getElementById('modal-input-tags').value = Array.isArray(item?.tags) ? item.tags.join(', ') : (item?.tags || '');
+      document.getElementById('modal-input-video').value = item?.videoUrl || '';
+      document.getElementById('modal-input-highlights').value = Array.isArray(item?.highlights) ? item.highlights.join('\n') : (item?.highlights || '');
+      document.getElementById('modal-input-image').value = item?.image || '';
+      document.getElementById('modal-auto-yt-thumb').checked = true;
+      
+      updateModalImagePreview(item?.image || (item?.videoUrl ? getYouTubeThumbnail(item.videoUrl) : ''));
+      document.getElementById('modal-title').innerHTML = `<i data-lucide="film" class="w-5 h-5 text-amber-400"></i><span>${index >= 0 ? `編輯作品：${item?.title || ''}` : '新增作品項目'}</span>`;
+      document.getElementById('portfolio-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closePortfolioModal() {
+      document.getElementById('portfolio-modal').classList.add('hidden');
+    }
+
+    function editPortfolioItem(index) {
+      const item = currentContent.portfolio[index];
+      openPortfolioModal(item, index);
+    }
+
+    function duplicatePortfolioItem(index) {
+      const original = currentContent.portfolio[index];
+      const copy = JSON.parse(JSON.stringify(original));
+      copy.id = `proj_${Date.now()}`;
+      copy.title = `${copy.title} (複本)`;
+      currentContent.portfolio.splice(index + 1, 0, copy);
+      markDirty();
+      renderPortfolioList();
+      showToast('已複製作品項目', 'success');
+    }
+
+    function deletePortfolioItem(index) {
+      const item = currentContent.portfolio[index];
+      if (confirm(`確定要刪除「${item.title || '此作品'}」嗎？`)) {
+        currentContent.portfolio.splice(index, 1);
+        markDirty();
+        renderPortfolioList();
+        showToast('已刪除作品項目', 'info');
+      }
+    }
+
+    // ==========================================
+    // YOUTUBE THUMBNAIL AUTO-EXTRACTION
+    // ==========================================
+    function extractYouTubeVideoId(url) {
+      if (!url) return null;
+      const clean = url.trim();
+      const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
+      const match = clean.match(regExp);
+      return match && match[1] ? match[1] : null;
+    }
+
+    function getYouTubeThumbnail(url) {
+      const vid = extractYouTubeVideoId(url);
+      return vid ? `https://img.youtube.com/vi/${vid}/maxresdefault.jpg` : null;
+    }
+
+    function handleModalVideoUrlChange(url) {
+      const autoFetch = document.getElementById('modal-auto-yt-thumb').checked;
+      if (autoFetch && url) {
+        const thumb = getYouTubeThumbnail(url);
+        if (thumb) {
+          document.getElementById('modal-input-image').value = thumb;
+          updateModalImagePreview(thumb);
+        }
+      }
+    }
+
+    function handleAutoYtThumbToggle(checked) {
+      if (checked) {
+        triggerAutoYouTubeThumbExtraction();
+      }
+    }
+
+    function triggerAutoYouTubeThumbExtraction() {
+      const videoUrl = document.getElementById('modal-input-video').value.trim();
+      const thumb = getYouTubeThumbnail(videoUrl);
+      if (thumb) {
+        document.getElementById('modal-input-image').value = thumb;
+        updateModalImagePreview(thumb);
+        showToast('✨ 已自動抓取 YouTube 高畫質封面！', 'success');
+      } else {
+        showToast('請先輸入有效的 YouTube 影片網址（含 youtu.be 或 Shorts）', 'error');
+      }
+    }
+
+    function updateModalImagePreview(url) {
+      const img = document.getElementById('modal-preview-image');
+      const empty = document.getElementById('modal-empty-image');
+      if (url) {
+        img.src = url;
+        img.classList.remove('hidden');
+        empty.classList.add('hidden');
+      } else {
+        img.src = '';
+        img.classList.add('hidden');
+        empty.classList.remove('hidden');
+      }
+    }
+
+    async function handleModalImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      showToast(`正在壓縮並上傳封面至 R2...`, 'info');
+      try {
+        const base64 = await fileToCompressedBase64(file);
+        const result = await uploadImageToR2(file.name, base64);
+        const finalUrl = result.url || result.rawUrl || base64;
+        document.getElementById('modal-input-image').value = finalUrl;
+        document.getElementById('modal-auto-yt-thumb').checked = false;
+        updateModalImagePreview(finalUrl);
+        showToast('✨ 封面圖已成功上傳至 Cloudflare R2！', 'success');
+      } catch (err) {
+        showToast(`上傳提示：${err.message}（已為您套用本機預覽）`, 'error');
+      }
+    }
+
+    function savePortfolioModalItem() {
+      const index = parseInt(document.getElementById('modal-item-index').value, 10);
+      const id = document.getElementById('modal-item-id').value;
+      const title = document.getElementById('modal-input-title').value.trim();
+      const category = document.getElementById('modal-input-category').value.trim();
+      const year = document.getElementById('modal-input-year').value.trim();
+      const role = document.getElementById('modal-input-role').value.trim();
+      const clientOrProject = document.getElementById('modal-input-client').value.trim();
+      const description = document.getElementById('modal-input-desc').value.trim();
+      const rawTags = document.getElementById('modal-input-tags').value.trim();
+      const videoUrl = document.getElementById('modal-input-video').value.trim();
+      const rawHighlights = document.getElementById('modal-input-highlights').value.trim();
+      let image = document.getElementById('modal-input-image').value.trim();
+
+      if (!image && videoUrl) {
+        image = getYouTubeThumbnail(videoUrl) || '';
+      }
+
+      const tags = rawTags ? rawTags.split(/[,，]/).map(t => t.trim()).filter(Boolean) : [];
+      const highlights = rawHighlights ? rawHighlights.split('\n').map(h => h.trim()).filter(Boolean) : [];
+
+      const newItem = {
+        id,
+        title,
+        category,
+        year,
+        role,
+        clientOrProject,
+        description,
+        tags,
+        videoUrl,
+        highlights,
+        image
+      };
+
+      if (index >= 0) {
+        currentContent.portfolio[index] = newItem;
+      } else {
+        currentContent.portfolio.unshift(newItem);
+      }
+
+      markDirty();
+      renderPortfolioList();
+      closePortfolioModal();
+      showToast('作品已更新！請點擊上方「一鍵發佈至 KV」保存', 'success');
+    }
+
+    // ==========================================
+    // R2 ASSET MANAGER & UPLOAD
+    // ==========================================
+    function renderAssetsPanel() {
+      const assets = currentContent.assets || {};
+      
+      const logoUrl = assets.logo || '';
+      document.getElementById('asset-url-logo').value = logoUrl;
+      const previewLogo = document.getElementById('preview-asset-logo');
+      const emptyLogo = document.getElementById('empty-asset-logo');
+      if (logoUrl) {
+        previewLogo.src = logoUrl;
+        previewLogo.classList.remove('hidden');
+        emptyLogo.classList.add('hidden');
+      } else {
+        previewLogo.classList.add('hidden');
+        emptyLogo.classList.remove('hidden');
+      }
+
+      const founderUrl = assets.founderImage || assets.avatar || '';
+      document.getElementById('asset-url-founder').value = founderUrl;
+      const previewFounder = document.getElementById('preview-asset-founder');
+      const emptyFounder = document.getElementById('empty-asset-founder');
+      if (founderUrl) {
+        previewFounder.src = founderUrl;
+        previewFounder.classList.remove('hidden');
+        emptyFounder.classList.add('hidden');
+      } else {
+        previewFounder.classList.add('hidden');
+        emptyFounder.classList.remove('hidden');
+      }
+    }
+
+    function resetToDefaultLogo() {
+      if (!currentContent.assets) currentContent.assets = {};
+      currentContent.assets.logo = '';
+      markDirty();
+      renderAssetsPanel();
+      showToast('已恢復官方預設向量 Logo！請點擊「一鍵發佈」保存', 'success');
+    }
+
+    function resetToDefaultAvatar() {
+      if (!currentContent.assets) currentContent.assets = {};
+      currentContent.assets.founderImage = '';
+      currentContent.assets.avatar = '';
+      markDirty();
+      renderAssetsPanel();
+      showToast('已恢復創辦人官方預設照片！請點擊「一鍵發佈」保存', 'success');
+    }
+
+    function handleAssetUrlChange(key, value) {
+      if (!currentContent.assets) currentContent.assets = {};
+      const trimmed = value.trim();
+      currentContent.assets[key] = trimmed;
+      if (key === 'founderImage') {
+        currentContent.assets.avatar = trimmed;
+      }
+      markDirty();
+      renderAssetsPanel();
+    }
+
+    async function handleAssetUpload(event, key) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      showToast(`正在處理並上傳 ${file.name} 至 Cloudflare R2...`, 'info');
+      try {
+        const base64 = await fileToCompressedBase64(file);
+        const result = await uploadImageToR2(file.name, base64);
+        const finalUrl = result.url || result.rawUrl || base64;
+
+        if (!currentContent.assets) currentContent.assets = {};
+        currentContent.assets[key] = finalUrl;
+        if (key === 'founderImage') {
+          currentContent.assets.avatar = finalUrl;
+        }
+
+        markDirty();
+        renderAssetsPanel();
+        showToast('✨ 圖片已成功上傳至 Cloudflare R2！請點擊上方「一鍵發佈至 KV」保存', 'success');
+      } catch (err) {
+        showToast(`上傳失敗：${err.message}`, 'error');
+      }
+    }
+
+    async function uploadImageToR2(filename, base64) {
+      const apiBase = getApiBase();
+      const url = apiBase ? `${apiBase}/api/upload` : '/api/upload';
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ filename, base64 })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'R2 上傳失敗，請確認 Worker 設定');
+      }
+      return data;
+    }
+
+    // ==========================================
+    // SITE INFO META
+    // ==========================================
+    function renderSiteInfoPanel() {
+      const info = currentContent.siteInfo || {};
+      document.getElementById('meta-title').value = info.title || '維度影學 Cine Dimension';
+      document.getElementById('meta-email').value = info.email || 'select03@gmail.com';
+      document.getElementById('meta-tagline').value = info.tagline || 'Have Fun 享受創作 ｜ 用手機拍出真實的電影感';
+      document.getElementById('meta-youtube').value = info.youtube || '@cinedimens';
+      document.getElementById('meta-facebook').value = info.facebook || '維度影學 Cine Dimension';
+      document.getElementById('meta-instagram').value = info.instagram || '';
+    }
+
+    function collectSiteInfoFromDOM() {
+      currentContent.siteInfo = {
+        title: document.getElementById('meta-title').value.trim(),
+        email: document.getElementById('meta-email').value.trim(),
+        tagline: document.getElementById('meta-tagline').value.trim(),
+        youtube: document.getElementById('meta-youtube').value.trim(),
+        facebook: document.getElementById('meta-facebook').value.trim(),
+        instagram: document.getElementById('meta-instagram').value.trim()
+      };
+    }
+
+    // ==========================================
+    // PUBLISH (SAVE TO CLOUDFLARE KV)
+    // ==========================================
+    async function handlePublishContent() {
+      collectSiteInfoFromDOM();
+
+      const btn = document.getElementById('publish-btn');
+      const progressBar = document.getElementById('publish-progress-bar');
+      const progressInner = document.getElementById('publish-progress-inner');
+
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>正在發佈至 KV...</span>`;
+      lucide.createIcons();
+
+      progressBar.classList.remove('hidden');
+      progressInner.style.width = '30%';
+
+      try {
+        const apiBase = getApiBase();
+        const url = apiBase ? `${apiBase}/api/save` : '/api/save';
+
+        progressInner.style.width = '60%';
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+          },
+          body: JSON.stringify({
+            content: currentContent,
+            updatedAt: new Date().toISOString()
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || '寫入 KV 失敗');
+        }
+
+        progressInner.style.width = '100%';
+        setTimeout(() => {
+          progressBar.classList.add('hidden');
+          progressInner.style.width = '0%';
+        }, 500);
+
+        setClean();
+        showToast('🎉 發佈成功！資料已安全寫入 Cloudflare KV，全球即刻同步！', 'success');
+      } catch (err) {
+        progressBar.classList.add('hidden');
+        showToast(`發佈失敗：${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i><span>一鍵發佈至 KV</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    // ==========================================
+    // LEADS VIEWER
+    // ==========================================
+    async function loadLeadsFromKV() {
+      const container = document.getElementById('leads-list-container');
+      const badge = document.getElementById('leads-count-badge');
+      container.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs"><i data-lucide="loader" class="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-400"></i>正在載入客戶詢問單...</div>`;
+      lucide.createIcons();
+
+      try {
+        const apiBase = getApiBase();
+        const url = apiBase ? `${apiBase}/api/leads` : '/api/leads';
+        const res = await fetch(url, {
+          headers: getAuthHeaders(),
+          cache: 'no-store'
+        });
+
+        const data = await res.json();
+        const leads = (data.leads || []);
+        badge.innerText = `${leads.length} 筆`;
+
+        if (leads.length === 0) {
+          container.innerHTML = `
+            <div class="p-10 text-center bg-[#141720] border border-slate-800 rounded-2xl space-y-2">
+              <i data-lucide="inbox" class="w-8 h-8 text-slate-600 mx-auto"></i>
+              <p class="text-sm font-semibold text-slate-300">目前尚無預約諮詢紀錄</p>
+              <p class="text-xs text-slate-500">當訪客在網站送出預約表單時，名單將自動列於此處。</p>
+            </div>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = leads.map(lead => `
+          <div class="bg-[#141720] border border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white text-sm sm:text-base">${lead.name || '訪客'}</span>
+                <span class="px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-300 rounded font-mono">${lead.organization || '個人'}</span>
+              </div>
+              <span class="text-xs text-slate-400 font-mono">${lead.timestamp || ''}</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-300">
+              <p><span class="text-slate-500">信箱：</span><a href="mailto:${lead.email}" class="text-sky-400 hover:underline">${lead.email || '無'}</a></p>
+              <p><span class="text-slate-500">電話：</span><a href="tel:${lead.phone}" class="text-sky-400 hover:underline">${lead.phone || '無'}</a></p>
+              <p><span class="text-slate-500">需求：</span><span class="text-amber-300">${lead.serviceRequested || '未指定'}</span></p>
+            </div>
+
+            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
+              ${lead.message || '無特殊備註'}
+            </div>
+          </div>
+        `).join('');
+        lucide.createIcons();
+      } catch (err) {
+        container.innerHTML = `<div class="p-6 text-center text-rose-400 text-xs">讀取失敗：${err.message}</div>`;
+      }
+    }
+
+    // ==========================================
+    // UTILITIES
+    // ==========================================
+    function markDirty() {
+      isDirty = true;
+      document.getElementById('dirty-badge').classList.remove('hidden');
+    }
+
+    function setClean() {
+      isDirty = false;
+      document.getElementById('dirty-badge').classList.add('hidden');
+    }
+
+    function fileToCompressedBase64(file, maxWidth = 1920, maxHeight = 1920, quality = 0.85) {
+      return new Promise((resolve, reject) => {
+        if (file.type === 'image/svg+xml' || file.size < 300 * 1024) {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+              if (width > height) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+              } else {
+                width = Math.round((width * maxHeight) / height);
+                height = maxHeight;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+            resolve(canvas.toDataURL(mimeType, quality));
+          };
+          img.onerror = () => resolve(e.target.result);
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const bgColors = {
+        success: 'bg-emerald-950/95 border-emerald-700/80 text-emerald-200',
+        error: 'bg-rose-950/95 border-rose-700/80 text-rose-200',
+        info: 'bg-slate-900/95 border-slate-700 text-slate-200'
+      };
+
+      const icons = {
+        success: 'check-circle',
+        error: 'alert-triangle',
+        info: 'info'
+      };
+
+      toast.className = `p-3.5 rounded-xl border shadow-2xl text-xs flex items-start gap-2.5 backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${icons[type] || 'info'}" class="w-4 h-4 shrink-0 mt-0.5"></i>
+        <div class="flex-1 leading-relaxed">${message}</div>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4500);
+    }
+  </script>
 </body>
 </html>

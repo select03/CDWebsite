@@ -13,9 +13,9 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
   className = '',
   size = 'md',
   showText = true,
+  customLogo,
 }) => {
-  // 全域死鎖 Logo 來源為 /images/logo.svg，徹底跳過外部動態覆蓋
-  const activeLogo = STATIC_ASSETS.LOGO;
+  const activeLogo = customLogo && customLogo.trim() ? customLogo.trim() : STATIC_ASSETS.LOGO;
   const [imageError, setImageError] = useState(false);
 
   // Sizing mappings
@@ -42,11 +42,11 @@ export const CineDimensionLogo: React.FC<CineDimensionLogoProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-2.5 select-none shrink-0 min-w-max ${className}`}>
-      {/* Brand Icon (Deadlocked to /images/logo.svg with SVG fallback) */}
+      {/* Brand Icon (Dynamic Logo with SVG fallback) */}
       <div className={`relative flex items-center justify-center shrink-0 ${iconSizeClasses[size]}`}>
-        {!imageError ? (
+        {!imageError && activeLogo ? (
           <img
-            src={STATIC_ASSETS.LOGO}
+            src={activeLogo}
             alt="維度影學 Cine Dimension"
             className="w-full h-full object-contain drop-shadow-sm"
             onError={() => setImageError(true)}
