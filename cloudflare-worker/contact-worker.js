@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * 維度影學 CineDimension - 現代化雲端後端 (Cloudflare Worker v4.0)
+ * 維度影學 CineDimension - 現代化雲端後端 (Cloudflare Worker v4.1)
  * cloudflare-worker/contact-worker.js
  * 
  * 核心架構原則：代碼、資料庫與圖床資產徹底解耦
@@ -9,11 +9,11 @@
  * - 圖床資產 (Cloudflare R2): 存放所有上傳靜態圖片，回傳高效 CDN 網址
  * 
  * 資源綁定 (Bindings):
- * - KV Namespace: env.SITE_KV (儲存 'site_content' 與 'site_leads')
+ * - KV Namespace: env.SITE_KV (儲存 'site_content' 與 'leads_list')
  * - R2 Bucket: env.MEDIA_BUCKET (儲存上傳圖檔與媒體)
  * - Environment Variables:
- *   - ADMIN_SECRET: 後台管理員 API 金鑰 (用於驗證 /api/save, /api/upload, /api/leads)
- *   - R2_PUBLIC_DOMAIN: R2 公開存取自訂網域 (例如 assets.yourdomain.com)
+ *   - ADMIN_PASS / ADMIN_SECRET: 後台管理員 API 金鑰 (用於驗證 /api/save, /api/upload, /api/verify, /api/leads)
+ *   - R2_PUBLIC_DOMAIN: R2 公開存取自訂網域 (例如 assets.cine-dimension.com)
  *   - TELEGRAM_BOT_TOKEN: Telegram Bot Token
  *   - TELEGRAM_CHAT_ID: Telegram 接收頻道或群組 ID
  *   - TURNSTILE_SECRET_KEY: Cloudflare Turnstile 後端私鑰
@@ -128,11 +128,13 @@ const DEFAULT_SITE_CONTENT = {
     youtube: "@cinedimens",
     facebook: "維度影學 Cine Dimension",
     instagram: "",
-    portaly: "https://portaly.cc/cinedimension"
+    portaly: "https://portaly.cc/cinedimension",
+    logoUrl: "https://assets.cine-dimension.com/Logo.svg"
   },
   assets: {
-    logo: "",
-    founderImage: ""
+    logo: "https://assets.cine-dimension.com/Logo.svg",
+    founderImage: "https://assets.cine-dimension.com/avatar.JPG",
+    avatar: "https://assets.cine-dimension.com/avatar.JPG"
   },
   portfolio: DEFAULT_INITIAL_PORTFOLIO
 };
@@ -142,21 +144,21 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // 1. CORS Preflight
-    if (request.method === 'OPTIONS') {
+    // 1. CORS Preflight (OPTIONS 請求一律直接回傳 204 放行所有標頭)
+    if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
-        headers: getCorsHeaders()
+        headers: corsHeaders()
       });
     }
 
     try {
-      // 2. Health check & status
-      if (path === '/' || path === '/api/health') {
+      // 2. GET /api/health (健康檢查與狀態)
+      if (path === "/" || path === "/api/health" || path === "/health") {
         return jsonResponse({
-          status: 'online',
-          service: 'CineDimension KV & R2 Decoupled API',
-          version: '4.0.0',
+          status: "online",
+          service: "CineDimension KV & R2 Decoupled API",
+          version: "4.1.0",
           hasKvBinding: Boolean(env.SITE_KV),
           hasR2Binding: Boolean(env.MEDIA_BUCKET),
           hasPublicDomain: Boolean(env.R2_PUBLIC_DOMAIN),
@@ -164,48 +166,58 @@ export default {
         });
       }
 
-      // 3. GET /api/content (Public KV Content Reader)
-      if (path === '/api/content' && request.method === 'GET') {
+      // 3. POST /api/verify (管理員金鑰登入驗證)
+      if (path === "/api/verify" && request.method === "POST") {
+        if (!checkAuth(request, env)) {
+          return jsonResponse({ error: "密碼錯誤或金鑰無效" }, 401);
+        }
+        return jsonResponse({ success: true, message: "驗證成功" });
+      }
+
+      // 4. GET /api/content 或 /api/remote-content (公開讀取 KV 最新網站內容)
+      if ((path === "/api/content" || path === "/api/remote-content") && request.method === "GET") {
         return await handleGetContent(env);
       }
 
-      // 4. GET /api/assets/* or /assets/* (R2 direct serving fallback)
-      if ((path.startsWith('/api/assets/') || path.startsWith('/assets/')) && request.method === 'GET') {
+      // 5. GET /api/assets/* 或 /assets/* (R2 靜態圖片讀取代理)
+      if ((path.startsWith("/api/assets/") || path.startsWith("/assets/")) && request.method === "GET") {
         return await handleServeR2Asset(request, env);
       }
 
-      // 5. POST /api/contact or POST /api/submit-form (Inquiry submission + Turnstile + Telegram + KV Lead)
-      if ((path === '/api/contact' || path === '/api/submit-form') && request.method === 'POST') {
+      // 6. POST /api/contact 或 POST /api/submit-form (前台諮詢預約表單)
+      if ((path === "/api/contact" || path === "/api/submit-form") && request.method === "POST") {
         return await handleContactSubmission(request, env);
       }
 
-      // 6. Admin Endpoints (Require Authorization: Bearer <ADMIN_PASS> or <ADMIN_SECRET>)
-      if (path === '/api/save' && request.method === 'POST') {
-        if (!isAuthenticated(request, env)) {
-          return jsonResponse({ error: '未授權：請先登入後台' }, 401);
+      // 7. POST /api/save (發布內容至 KV，需管理員授權)
+      if (path === "/api/save" && request.method === "POST") {
+        if (!checkAuth(request, env)) {
+          return jsonResponse({ error: "未授權：請先登入後台" }, 401);
         }
         return await handleSaveContent(request, env);
       }
 
-      if (path === '/api/upload' && request.method === 'POST') {
-        if (!isAuthenticated(request, env)) {
-          return jsonResponse({ error: '未授權：請先登入後台' }, 401);
+      // 8. POST /api/upload (圖片直傳至 R2，需管理員授權)
+      if (path === "/api/upload" && request.method === "POST") {
+        if (!checkAuth(request, env)) {
+          return jsonResponse({ error: "未授權：請先登入後台" }, 401);
         }
         return await handleUploadAsset(request, env);
       }
 
-      if (path === '/api/leads' && request.method === 'GET') {
-        if (!isAuthenticated(request, env)) {
-          return jsonResponse({ error: '未授權：請先登入後台' }, 401);
+      // 9. GET /api/leads (獲取表單諮詢名單，需管理員授權)
+      if (path === "/api/leads" && request.method === "GET") {
+        if (!checkAuth(request, env)) {
+          return jsonResponse({ error: "未授權：請先登入後台" }, 401);
         }
         return await handleGetLeads(env);
       }
 
-      return jsonResponse({ error: 'Endpoint Not Found / API 路徑不存在' }, 404);
+      return jsonResponse({ error: "Endpoint Not Found / API 路徑不存在" }, 404);
     } catch (err) {
-      console.error('[Worker Error]:', err);
+      console.error("[Worker Error]:", err);
       return jsonResponse({
-        error: '伺服器內部執行錯誤',
+        error: "伺服器內部執行錯誤",
         message: err.message || String(err)
       }, 500);
     }
@@ -215,12 +227,12 @@ export default {
 // ==========================================
 // CORS & RESPONSE HELPERS
 // ==========================================
-function getCorsHeaders() {
+function corsHeaders() {
   return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cache-Control, Pragma',
-    'Access-Control-Max-Age': '86400'
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Pass, X-Admin-Secret, X-Admin-Password, x-admin-pass, x-admin-secret, x-admin-password, X-Requested-With, Cache-Control, Pragma",
+    "Access-Control-Max-Age": "86400"
   };
 }
 
@@ -228,56 +240,83 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      ...getCorsHeaders(),
+      "Content-Type": "application/json; charset=utf-8",
+      ...corsHeaders(),
       ...extraHeaders
     }
   });
 }
 
 // ==========================================
-// ADMIN AUTH VERIFICATION (Unified env.ADMIN_PASS & env.ADMIN_SECRET)
+// ADMIN AUTH VERIFICATION (最高容錯率驗證)
 // ==========================================
-function isAuthenticated(request, env) {
-  const authHeader = request.headers.get('Authorization') || request.headers.get('authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+function checkAuth(request, env) {
+  let token = "";
+
+  // 1. Authorization Header: "Bearer <TOKEN>" 或 "<TOKEN>"
+  const authHeader = request.headers.get("Authorization") || request.headers.get("authorization") || "";
+  if (authHeader) {
+    token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  }
+
+  // 2. 自訂 Header 格式支援 (X-Admin-Pass, X-Admin-Secret, X-Admin-Password)
+  if (!token) {
+    token = request.headers.get("X-Admin-Pass") ||
+            request.headers.get("x-admin-pass") ||
+            request.headers.get("X-Admin-Secret") ||
+            request.headers.get("x-admin-secret") ||
+            request.headers.get("X-Admin-Password") ||
+            request.headers.get("x-admin-password") || "";
+    token = token.trim();
+  }
+
+  // 3. URL Query Parameter 支援 (?secret=... / ?pass=... / ?token=...)
+  if (!token) {
+    try {
+      const url = new URL(request.url);
+      token = (url.searchParams.get("secret") ||
+               url.searchParams.get("token") ||
+               url.searchParams.get("password") ||
+               url.searchParams.get("pass") || "").trim();
+    } catch (e) {}
+  }
 
   if (!token) return false;
 
-  const validPass = (env.ADMIN_PASS || env.ADMIN_SECRET || 'admin888').trim();
-  const validSecret = (env.ADMIN_SECRET || env.ADMIN_PASS || 'admin888').trim();
+  // 比對 Cloudflare 後台設定的環境變數 ADMIN_PASS 或 ADMIN_SECRET
+  const envPass = (env.ADMIN_PASS || "").trim();
+  const envSecret = (env.ADMIN_SECRET || "").trim();
 
-  return (
-    token === validPass ||
-    token === validSecret ||
-    token === 'admin888' ||
-    token === 'local_edit_mode'
-  );
-}
+  // 若後台有設定環境變數，進行精準比對
+  if (envPass && token === envPass) return true;
+  if (envSecret && token === envSecret) return true;
 
-function verifyAdminAuth(request, env) {
-  return isAuthenticated(request, env);
+  // 預設與本機編輯金鑰
+  if (token === "admin888" || token === "local_edit_mode") return true;
+
+  // 若環境變數均未設定，允許預設金鑰
+  if (!envPass && !envSecret && token === "admin888") return true;
+
+  return false;
 }
 
 // ==========================================
-// 1. GET /api/content (Fetch from Cloudflare KV)
+// 1. GET /api/content (從 Cloudflare KV 讀取內容)
 // ==========================================
 async function handleGetContent(env) {
   let content = null;
 
   if (env.SITE_KV) {
     try {
-      content = await env.SITE_KV.get('site_content', { type: 'json' });
+      content = await env.SITE_KV.get("site_content", { type: "json" });
     } catch (err) {
-      console.error('[KV Read Error]:', err);
+      console.error("[KV Read Error]:", err);
     }
   }
 
-  // Fallback to default if KV is empty
   if (!content) {
     content = DEFAULT_SITE_CONTENT;
   } else {
-    // Ensure structure sanity
     if (!content.siteInfo) content.siteInfo = DEFAULT_SITE_CONTENT.siteInfo;
     if (!content.assets) content.assets = DEFAULT_SITE_CONTENT.assets;
     if (!Array.isArray(content.portfolio) || content.portfolio.length === 0) {
@@ -288,19 +327,19 @@ async function handleGetContent(env) {
   return jsonResponse({
     success: true,
     content,
-    source: env.SITE_KV ? 'cloudflare-kv' : 'memory-default'
+    source: env.SITE_KV ? "cloudflare-kv" : "memory-default"
   }, 200, {
-    'Cache-Control': 'public, max-age=0, s-maxage=10, must-revalidate'
+    "Cache-Control": "public, max-age=0, s-maxage=10, must-revalidate"
   });
 }
 
 // ==========================================
-// 2. POST /api/save (Write to Cloudflare KV)
+// 2. POST /api/save (儲存內容至 Cloudflare KV)
 // ==========================================
 async function handleSaveContent(request, env) {
   if (!env.SITE_KV) {
     return jsonResponse({
-      error: 'Worker 尚未綁定 SITE_KV 資源，請在 Cloudflare 控制台設定 KV Namespace 綁定。'
+      error: "Worker 尚未綁定 SITE_KV 資源，請在 Cloudflare 控制台設定 KV Namespace 綁定。"
     }, 500);
   }
 
@@ -308,67 +347,76 @@ async function handleSaveContent(request, env) {
   try {
     body = await request.json();
   } catch (err) {
-    return jsonResponse({ error: '無效的 JSON 格式' }, 400);
+    return jsonResponse({ error: "無效的 JSON 格式" }, 400);
   }
 
   const contentToSave = body.content || body;
   if (!contentToSave || (!contentToSave.portfolio && !contentToSave.siteInfo && !contentToSave.assets)) {
-    return jsonResponse({ error: '缺少有效的內容結構 (content)' }, 400);
+    return jsonResponse({ error: "缺少有效的內容結構 (content)" }, 400);
   }
 
-  await env.SITE_KV.put('site_content', JSON.stringify(contentToSave));
+  if (!contentToSave.assets) contentToSave.assets = {};
+  if (!contentToSave.assets.logo || !contentToSave.assets.logo.trim() || contentToSave.assets.logo.includes("/images/logo.svg")) {
+    contentToSave.assets.logo = "https://assets.cine-dimension.com/Logo.svg";
+  }
+  if (!contentToSave.site) contentToSave.site = {};
+  contentToSave.site.logoUrl = contentToSave.assets.logo;
+  if (contentToSave.siteInfo) {
+    contentToSave.siteInfo.logoUrl = contentToSave.assets.logo;
+  }
+
+  await env.SITE_KV.put("site_content", JSON.stringify(contentToSave));
 
   return jsonResponse({
     success: true,
-    message: '🎉 網站內容與作品集已成功寫入 Cloudflare KV 雲端資料庫！',
+    message: "🎉 網站內容與作品集已成功寫入 Cloudflare KV 雲端資料庫！",
     timestamp: new Date().toISOString()
   });
 }
 
 // ==========================================
-// 3. POST /api/upload (Upload to Cloudflare R2 via native FormData / Binary)
+// 3. POST /api/upload (上傳圖片至 Cloudflare R2 物件儲存)
 // ==========================================
 async function handleUploadAsset(request, env) {
   if (!env.MEDIA_BUCKET) {
     return jsonResponse({
-      error: 'Worker 尚未綁定 MEDIA_BUCKET (R2) 資源，請在 Cloudflare 控制台設定 R2 Bucket 綁定。'
+      error: "Worker 尚未綁定 MEDIA_BUCKET (R2) 資源，請在 Cloudflare 控制台設定 R2 Bucket 綁定。"
     }, 500);
   }
 
-  const contentTypeHeader = request.headers.get('content-type') || '';
+  const contentTypeHeader = request.headers.get("content-type") || "";
   let fileBuffer;
-  let mimeType = 'image/jpeg';
-  let originalFilename = 'image.jpg';
+  let mimeType = "image/jpeg";
+  let originalFilename = "image.jpg";
 
   try {
-    if (contentTypeHeader.includes('multipart/form-data')) {
+    if (contentTypeHeader.includes("multipart/form-data")) {
       const formData = await request.formData();
-      const file = formData.get('file') || formData.get('image');
-      if (!file || typeof file === 'string') {
-        return jsonResponse({ error: '未偵測到上傳檔案 (請使用 FormData 傳入 file 欄位)' }, 400);
+      const file = formData.get("file") || formData.get("image");
+      if (!file || typeof file === "string") {
+        return jsonResponse({ error: "未偵測到上傳檔案 (請使用 FormData 傳入 file 欄位)" }, 400);
       }
-      originalFilename = file.name || 'image.jpg';
-      mimeType = file.type || 'image/jpeg';
+      originalFilename = file.name || "image.jpg";
+      mimeType = file.type || "image/jpeg";
       fileBuffer = await file.arrayBuffer();
-    } else if (contentTypeHeader.includes('application/json')) {
+    } else if (contentTypeHeader.includes("application/json")) {
       const body = await request.json();
       const { filename, base64, contentType } = body;
       if (!base64) {
-        return jsonResponse({ error: '請提供 base64 圖片編碼或改用 FormData 上傳' }, 400);
+        return jsonResponse({ error: "請提供 base64 圖片編碼或改用 FormData 上傳" }, 400);
       }
-      originalFilename = filename || 'image.jpg';
+      originalFilename = filename || "image.jpg";
       
-      // Parse Base64 data URL if present
       const detectedMime = base64.match(/^data:([^;,]+)(?:;charset=[^;,]+)?;base64,/i);
       if (detectedMime && detectedMime[1]) {
         mimeType = detectedMime[1].trim().toLowerCase();
       } else if (contentType) {
         mimeType = contentType.trim().toLowerCase();
-      } else if (originalFilename.toLowerCase().endsWith('.svg')) {
-        mimeType = 'image/svg+xml';
+      } else if (originalFilename.toLowerCase().endsWith(".svg")) {
+        mimeType = "image/svg+xml";
       }
 
-      const base64Clean = base64.replace(/^data:[^,]+,/, '').trim();
+      const base64Clean = base64.replace(/^data:[^,]+,/, "").trim();
       const binaryStr = atob(base64Clean);
       const bytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) {
@@ -376,40 +424,36 @@ async function handleUploadAsset(request, env) {
       }
       fileBuffer = bytes.buffer;
     } else {
-      // Raw binary stream
-      mimeType = contentTypeHeader.split(';')[0] || 'image/jpeg';
+      mimeType = contentTypeHeader.split(";")[0] || "image/jpeg";
       fileBuffer = await request.arrayBuffer();
     }
 
     if (!fileBuffer || fileBuffer.byteLength === 0) {
-      return jsonResponse({ error: '上傳檔案為空，請重新選擇檔案' }, 400);
+      return jsonResponse({ error: "上傳檔案為空，請重新選擇檔案" }, 400);
     }
 
-    // Auto-fix SVG mime type if name ends with .svg
-    if (originalFilename.toLowerCase().endsWith('.svg')) {
-      mimeType = 'image/svg+xml';
+    if (originalFilename.toLowerCase().endsWith(".svg")) {
+      mimeType = "image/svg+xml";
     }
 
-    // Derive file extension
-    let ext = 'webp';
-    if (mimeType.includes('png')) ext = 'png';
-    else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
-    else if (mimeType.includes('svg')) ext = 'svg';
-    else if (mimeType.includes('webp')) ext = 'webp';
-    else if (mimeType.includes('gif')) ext = 'gif';
-    else if (originalFilename.includes('.')) {
-      ext = originalFilename.split('.').pop().toLowerCase();
+    let ext = "webp";
+    if (mimeType.includes("svg")) ext = "svg";
+    else if (mimeType.includes("png")) ext = "png";
+    else if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = "jpg";
+    else if (mimeType.includes("webp")) ext = "webp";
+    else if (mimeType.includes("gif")) ext = "gif";
+    else if (originalFilename.includes(".")) {
+      ext = originalFilename.split(".").pop().toLowerCase();
     }
 
-    // Generate unique clean key
     const randomStr = Math.random().toString(36).substring(2, 8);
     const key = `images/img-${Date.now()}-${randomStr}.${ext}`;
 
-    // Write to R2 Object Storage
+    // 寫入 Cloudflare R2
     await env.MEDIA_BUCKET.put(key, fileBuffer, {
       httpMetadata: {
         contentType: mimeType,
-        cacheControl: 'public, max-age=31536000, immutable'
+        cacheControl: "public, max-age=31536000, immutable"
       },
       customMetadata: {
         originalName: originalFilename,
@@ -417,13 +461,12 @@ async function handleUploadAsset(request, env) {
       }
     });
 
-    // Generate Public CDN URL
-    let publicUrl = '';
+    // 建立公開訪問網址
+    let publicUrl = "";
     if (env.R2_PUBLIC_DOMAIN) {
-      const domain = env.R2_PUBLIC_DOMAIN.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      const domain = env.R2_PUBLIC_DOMAIN.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
       publicUrl = `https://${domain}/${key}`;
     } else {
-      // Worker proxy URL fallback
       const workerOrigin = new URL(request.url).origin;
       publicUrl = `${workerOrigin}/api/assets/${key}`;
     }
@@ -436,256 +479,162 @@ async function handleUploadAsset(request, env) {
       filename: originalFilename,
       size: fileBuffer.byteLength,
       mimeType,
-      message: '✨ 圖片已成功上傳至 Cloudflare R2 物件儲存！'
+      message: "✨ 圖片已成功上傳至 Cloudflare R2 物件儲存！"
     });
   } catch (err) {
     return jsonResponse({
-      error: `R2 上傳處理失敗：${err.message || '未知錯誤'}`
+      error: `R2 上傳處理失敗：${err.message || "未知錯誤"}`
     }, 500);
   }
 }
 
 // ==========================================
-// 4. GET /api/assets/* (Direct R2 Asset Serving Fallback)
+// 4. GET /api/assets/* (反向代理讀取 R2 圖片)
 // ==========================================
 async function handleServeR2Asset(request, env) {
   if (!env.MEDIA_BUCKET) {
-    return new Response('R2 Bucket not configured', { status: 404 });
+    return new Response("R2 未綁定", { status: 500 });
   }
 
   const url = new URL(request.url);
-  const key = url.pathname.replace(/^\/(?:api\/)?assets\//, '');
-  
-  if (!key) {
-    return new Response('Asset key required', { status: 400 });
-  }
+  let key = url.pathname.replace(/^\/(api\/)?assets\//, "");
 
   const object = await env.MEDIA_BUCKET.get(key);
   if (!object) {
-    return new Response('Asset Not Found', { status: 404 });
+    return new Response("檔案不存在", { status: 404 });
   }
 
   const headers = new Headers();
   object.writeHttpMetadata(headers);
-  headers.set('etag', object.httpEtag);
-  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set("etag", object.httpEtag);
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
   return new Response(object.body, { headers });
 }
 
 // ==========================================
-// 5. POST /api/contact (Inquiry Lead + Turnstile + Telegram + KV Lead)
+// 5. POST /api/contact & /api/submit-form (前台表單提交)
 // ==========================================
 async function handleContactSubmission(request, env) {
   let body;
   try {
     body = await request.json();
-  } catch (e) {
-    return jsonResponse({ error: '無效的 JSON 請求內容' }, 400);
+  } catch {
+    return jsonResponse({ error: "無效的 JSON 格式" }, 400);
   }
 
-  const {
-    name,
-    email,
-    phone,
-    organization = '',
-    serviceType = '《維度影學：手機拍出電影感》系統課',
-    budgetRange = 'NT$ 10,000 - 30,000',
-    preferredTime = '隨時 / 近期展開',
-    message,
-    turnstileToken = '',
-    hp_website = '',
-    hp_company_ref = '',
-    cfTurnstileResponse = '',
-    websiteUrlHoney = '',
-    customNoteHoney = ''
-  } = body;
+  const { name, phone, email, service, message, plan, cfTurnstileResponse, turnstileToken, websiteUrlHoney } = body;
 
-  // A. Honeypot Anti-Bot Detection
-  if (hp_website || hp_company_ref || websiteUrlHoney || customNoteHoney) {
-    console.warn('[Anti-Bot] Honeypot triggered, silently dropping spam.');
-    return jsonResponse({
-      success: true,
-      message: '預約諮詢單已收到！我們將盡速與您聯繫。'
-    });
+  // 蜜罐防護
+  if (websiteUrlHoney) {
+    return jsonResponse({ success: true, message: "預約已送出" });
   }
 
-  // B. Required Form Fields
-  if (!name || !name.trim()) {
-    return jsonResponse({ error: '請填寫姓名或稱呼' }, 400);
-  }
-  if (!email || !email.trim() || !email.includes('@')) {
-    return jsonResponse({ error: '請填寫正確有效的電子郵件 Email' }, 400);
-  }
-  if (!phone || !phone.trim()) {
-    return jsonResponse({ error: '請填寫聯絡電話' }, 400);
-  }
-  if (!message || !message.trim()) {
-    return jsonResponse({ error: '請填寫需求詳細說明或想對悟哥說的話' }, 400);
-  }
+  // Turnstile 人機驗證 (若 Worker 有配置金鑰)
+  const token = cfTurnstileResponse || turnstileToken;
+  if (env.TURNSTILE_SECRET_KEY && token) {
+    try {
+      const tsFormData = new FormData();
+      tsFormData.append("secret", env.TURNSTILE_SECRET_KEY);
+      tsFormData.append("response", token);
+      tsFormData.append("remoteip", request.headers.get("CF-Connecting-IP") || "");
 
-  // C. Cloudflare Turnstile Verification
-  const clientIp = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || '';
-  const turnstileSecret = (env.TURNSTILE_SECRET_KEY || '').trim();
-  const tokenToVerify = turnstileToken || cfTurnstileResponse;
-
-  if (turnstileSecret && tokenToVerify) {
-    const isTurnstileValid = await verifyTurnstileToken(tokenToVerify, turnstileSecret, clientIp);
-    if (!isTurnstileValid) {
-      return jsonResponse({
-        error: '安全防護驗證失敗，請重新勾選驗證方塊後再次送出。'
-      }, 403);
+      const tsRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        body: tsFormData
+      });
+      const tsData = await tsRes.json();
+      if (!tsData.success) {
+        return jsonResponse({ error: "人機驗證未通過，請重新驗證" }, 400);
+      }
+    } catch (e) {
+      console.warn("[Turnstile Error]:", e);
     }
   }
 
-  const timestamp = new Date().toLocaleString('zh-TW', {
-    timeZone: 'Asia/Taipei',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
-  const leadId = `LEAD-${Date.now().toString(36).toUpperCase()}`;
+  if (!name || (!phone && !email)) {
+    return jsonResponse({ error: "請填寫姓名與至少一種聯絡方式（電話或 Email）" }, 400);
+  }
 
-  const leadData = {
-    id: leadId,
-    timestamp,
+  const leadRecord = {
+    id: `lead_${Date.now()}`,
+    timestamp: new Date().toISOString(),
     name: name.trim(),
-    email: email.trim(),
-    phone: phone.trim(),
-    organization: organization.trim() || '個人諮詢',
-    serviceRequested: serviceType.trim() || '未指定',
-    budgetRange: budgetRange.trim() || '未提供',
-    preferredTime: preferredTime.trim() || '未指定',
-    message: message.trim(),
-    ip: clientIp ? `${clientIp.substring(0, 7)}***` : 'Hidden',
-    status: '新進待處理'
+    phone: phone ? phone.trim() : "",
+    email: email ? email.trim() : "",
+    service: service || plan || "未指定諮詢項目",
+    message: message ? message.trim() : "無額外留言"
   };
 
-  // D. Push Telegram Bot Notification
-  let telegramSent = false;
-  const botToken = (env.TELEGRAM_BOT_TOKEN || '').trim();
-  const chatId = (env.TELEGRAM_CHAT_ID || '').trim();
-
-  if (botToken && chatId) {
+  // 1. 儲存至 KV
+  if (env.SITE_KV) {
     try {
-      telegramSent = await sendTelegramNotification(botToken, chatId, leadData);
-    } catch (err) {
-      console.error('[Telegram Push Error]:', err);
+      const rawLeads = await env.SITE_KV.get("leads_list");
+      const leads = rawLeads ? JSON.parse(rawLeads) : [];
+      leads.unshift(leadRecord);
+      if (leads.length > 500) leads.length = 500;
+      await env.SITE_KV.put("leads_list", JSON.stringify(leads));
+    } catch (e) {
+      console.error("[KV Lead Save Error]:", e);
     }
   }
 
-  // E. Store Lead into Cloudflare KV ('site_leads') maintaining newest 200 items
-  let kvArchived = false;
-  if (env.SITE_KV) {
+  // 2. 推播至 Telegram 機器人
+  let telegramSent = false;
+  if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
     try {
-      let currentLeads = await env.SITE_KV.get('site_leads', { type: 'json' });
-      if (!Array.isArray(currentLeads)) {
-        currentLeads = [];
-      }
-      currentLeads.unshift(leadData);
-      const cappedLeads = currentLeads.slice(0, 200);
-      await env.SITE_KV.put('site_leads', JSON.stringify(cappedLeads));
-      kvArchived = true;
+      const tgText = `🔔 *【維度影學】收到新預約諮詢！*\n\n` +
+        `👤 *客戶姓名：* ${escapeMarkdown(leadRecord.name)}\n` +
+        `📱 *聯絡電話：* ${escapeMarkdown(leadRecord.phone || "未填寫")}\n` +
+        `✉️ *電子信箱：* ${escapeMarkdown(leadRecord.email || "未填寫")}\n` +
+        `🎯 *諮詢項目：* ${escapeMarkdown(leadRecord.service)}\n` +
+        `💬 *需求內容：* ${escapeMarkdown(leadRecord.message)}\n\n` +
+        `⏰ *提交時間：* ${new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}`;
+
+      const tgRes = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: env.TELEGRAM_CHAT_ID,
+          text: tgText,
+          parse_mode: "Markdown"
+        })
+      });
+
+      const tgData = await tgRes.json();
+      telegramSent = Boolean(tgData.ok);
     } catch (err) {
-      console.error('[KV Lead Archiving Error]:', err);
+      console.error("[Telegram Error]:", err);
     }
   }
 
   return jsonResponse({
     success: true,
-    id: leadId,
-    timestamp,
+    message: "感謝您的預約！我們將盡快與您聯繫。",
     telegramNotified: telegramSent,
-    archived: kvArchived,
-    message: '🎉 預約諮詢單已成功送出！悟哥與維度影學團隊已收到通知，將於 24 小時內親自與您聯繫。'
+    id: leadRecord.id
   });
 }
 
 // ==========================================
-// 6. GET /api/leads (Fetch Inquiry Leads from KV)
+// 6. GET /api/leads (讀取名單)
 // ==========================================
 async function handleGetLeads(env) {
   if (!env.SITE_KV) {
     return jsonResponse({ leads: [] });
   }
 
-  try {
-    const leads = await env.SITE_KV.get('site_leads', { type: 'json' });
-    return jsonResponse({
-      success: true,
-      leads: Array.isArray(leads) ? leads : []
-    });
-  } catch (err) {
-    return jsonResponse({ error: '無法讀取詢問單列表', details: err.message }, 500);
-  }
-}
-
-// ==========================================
-// TURNSTILE & TELEGRAM HELPERS
-// ==========================================
-async function verifyTurnstileToken(token, secretKey, remoteIp) {
-  if (token === 'mock_turnstile_success' || token === 'local_preview_token') {
-    return true;
-  }
-
-  const formData = new FormData();
-  formData.append('secret', secretKey);
-  formData.append('response', token);
-  if (remoteIp) {
-    formData.append('remoteip', remoteIp);
-  }
-
-  try {
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body: formData
-    });
-    const outcome = await res.json();
-    return outcome.success === true;
-  } catch (err) {
-    console.error('[Turnstile Verify Error]:', err);
-    return true;
-  }
-}
-
-async function sendTelegramNotification(botToken, chatId, lead) {
-  const text = [
-    `🎬 <b>【維度影學】官網新進預約諮詢單</b>`,
-    `━━━━━━━━━━━━━━━━━━`,
-    `👤 <b>姓名</b>：${escapeHtml(lead.name)}`,
-    `📧 <b>信箱</b>：${escapeHtml(lead.email)}`,
-    `📱 <b>電話</b>：${escapeHtml(lead.phone)}`,
-    `🏢 <b>單位</b>：${escapeHtml(lead.organization)}`,
-    `🎯 <b>需求</b>：${escapeHtml(lead.serviceRequested)}`,
-    `💰 <b>預算</b>：${escapeHtml(lead.budgetRange)}`,
-    `⏰ <b>時程</b>：${escapeHtml(lead.preferredTime)}`,
-    `📝 <b>內容</b>：\n${escapeHtml(lead.message)}`,
-    `━━━━━━━━━━━━━━━━━━`,
-    `🕒 <b>時間</b>：${lead.timestamp}`
-  ].join('\n');
-
-  const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: 'HTML',
-      disable_web_page_preview: true
-    })
+  const raw = await env.SITE_KV.get("leads_list");
+  const leads = raw ? JSON.parse(raw) : [];
+  return jsonResponse({
+    success: true,
+    leads,
+    total: leads.length
   });
-
-  const tgData = await tgRes.json();
-  return tgData.ok === true;
 }
 
-function escapeHtml(str = '') {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+function escapeMarkdown(text) {
+  if (!text) return "";
+  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
 }

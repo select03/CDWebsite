@@ -146,6 +146,11 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// POST /api/verify (Admin Auth Verification in Dev Mode)
+app.post("/api/verify", (_req, res) => {
+  res.json({ success: true, message: "驗證成功" });
+});
+
 // GET /api/content (KV Proxy & Local Cache)
 app.get(["/api/content", "/api/remote-content"], (_req, res) => {
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
