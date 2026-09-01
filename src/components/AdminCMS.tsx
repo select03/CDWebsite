@@ -1288,7 +1288,33 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
  */
 function fileToCompressedBase64(file: File, maxWidth = 1920, maxHeight = 1920, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (file.type === 'image/svg+xml' || file.size < 300 * 1024) {
+    const isSvg = file.type === 'image/svg+xml' || (file.name && file.name.toLowerCase().endsWith('.svg'));
+    
+    if (isSvg) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const res = e.target?.result;
+          if (typeof res === 'string' && res.startsWith('data:')) {
+            resolve(res);
+          } else {
+            const text = typeof res === 'string' ? res : new TextDecoder().decode(res as ArrayBuffer);
+            const base64 = btoa(unescape(encodeURIComponent(text)));
+            resolve(`data:image/svg+xml;base64,${base64}`);
+          }
+        } catch {
+          const directReader = new FileReader();
+          directReader.onload = () => resolve(directReader.result as string);
+          directReader.onerror = reject;
+          directReader.readAsDataURL(file);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    if (file.size < 300 * 1024) {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;

@@ -372,7 +372,7 @@
               </div>
 
               <div class="h-36 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
-                <img id="preview-asset-logo" src="" alt="Logo" class="max-h-full max-w-full object-contain hidden" />
+                <img id="preview-asset-logo" src="" alt="Logo" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('empty-asset-logo')?.classList.remove('hidden');" class="max-h-full max-w-full object-contain hidden" />
                 <div id="empty-asset-logo" class="text-center text-slate-500 text-xs flex flex-col items-center gap-1">
                   <i data-lucide="image" class="w-8 h-8 text-slate-600"></i>
                   <span>使用官方預設向量 Logo</span>
@@ -423,7 +423,7 @@
               </div>
 
               <div class="h-36 bg-[#0c0e13] border border-slate-800 rounded-xl flex items-center justify-center p-4 relative group overflow-hidden">
-                <img id="preview-asset-founder" src="" alt="Portrait" class="max-h-full max-w-full object-contain rounded-lg hidden" />
+                <img id="preview-asset-founder" src="" alt="Portrait" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('empty-asset-founder')?.classList.remove('hidden');" class="max-h-full max-w-full object-contain rounded-lg hidden" />
                 <div id="empty-asset-founder" class="text-center text-slate-500 text-xs flex flex-col items-center gap-1">
                   <i data-lucide="user" class="w-8 h-8 text-slate-600"></i>
                   <span>使用預設悟哥肖像</span>
@@ -720,7 +720,7 @@
 
           <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <div class="w-28 h-20 rounded-lg bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center relative">
-              <img id="modal-preview-image" src="" class="w-full h-full object-cover hidden" />
+              <img id="modal-preview-image" src="" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('modal-empty-image')?.classList.remove('hidden');" class="w-full h-full object-cover hidden" />
               <div id="modal-empty-image" class="text-[11px] text-slate-600 flex flex-col items-center">
                 <i data-lucide="image" class="w-6 h-6 text-slate-700"></i>
                 <span>無圖片</span>
@@ -929,7 +929,7 @@
     ];
 
     // App State
-    let adminSecret = localStorage.getItem('cms_admin_secret') || '';
+    let adminToken = localStorage.getItem('cd_admin_token') || localStorage.getItem('cms_admin_secret') || '';
     let workerApiUrl = localStorage.getItem('cms_worker_url') || '';
     let currentContent = {
       siteInfo: {
@@ -958,17 +958,16 @@
         document.getElementById('login-worker-url').value = savedWorkerUrl;
         document.getElementById('cfg-modal-worker-url').value = savedWorkerUrl;
       }
-      const savedSecret = localStorage.getItem('cms_admin_secret');
+      const savedSecret = localStorage.getItem('cd_admin_token') || localStorage.getItem('cms_admin_secret');
       if (savedSecret) {
         document.getElementById('login-admin-secret').value = savedSecret;
         document.getElementById('cfg-modal-admin-secret').value = savedSecret;
-      }
-
-      if (adminSecret) {
+        adminToken = savedSecret;
         showDashboard();
       } else {
-        // Direct entry with defaults
-        adminSecret = 'admin888';
+        // Direct entry with default password for convenience
+        adminToken = 'admin888';
+        document.getElementById('login-admin-secret').value = 'admin888';
         showDashboard();
       }
     });
@@ -987,9 +986,9 @@
     }
 
     function getAuthHeaders() {
-      const secret = adminSecret || localStorage.getItem('cms_admin_secret') || 'admin888';
+      const token = adminToken || localStorage.getItem('cd_admin_token') || localStorage.getItem('cms_admin_secret') || 'admin888';
       return {
-        'Authorization': `Bearer ${secret}`
+        'Authorization': `Bearer ${token}`
       };
     }
 
@@ -998,8 +997,9 @@
       const secret = document.getElementById('login-admin-secret').value.trim();
 
       workerApiUrl = url;
-      adminSecret = secret;
+      adminToken = secret;
       localStorage.setItem('cms_worker_url', url);
+      localStorage.setItem('cd_admin_token', secret);
       localStorage.setItem('cms_admin_secret', secret);
 
       showDashboard();
@@ -1008,15 +1008,19 @@
     }
 
     function enterDirectEditMode() {
-      adminSecret = 'local_edit_mode';
+      adminToken = 'local_edit_mode';
+      localStorage.setItem('cd_admin_token', 'local_edit_mode');
+      localStorage.setItem('cms_admin_secret', 'local_edit_mode');
       showDashboard();
       showToast('已進入本機編輯模式，可自由預覽與調整 6 大作品集！', 'info');
     }
 
     function handleLogout() {
       if (isDirty && !confirm('您有未發佈的變更，確定要登出嗎？')) return;
-      adminSecret = '';
+      adminToken = '';
+      localStorage.removeItem('cd_admin_token');
       localStorage.removeItem('cms_admin_secret');
+      document.getElementById('login-admin-secret').value = '';
       document.getElementById('login-view').classList.remove('hidden');
       document.getElementById('dashboard-view').classList.add('hidden');
       showToast('已安全登出', 'info');
@@ -1032,7 +1036,7 @@
 
     function openSettingsModal() {
       document.getElementById('cfg-modal-worker-url').value = workerApiUrl || localStorage.getItem('cms_worker_url') || '';
-      document.getElementById('cfg-modal-admin-secret').value = adminSecret || localStorage.getItem('cms_admin_secret') || '';
+      document.getElementById('cfg-modal-admin-secret').value = adminToken || localStorage.getItem('cd_admin_token') || localStorage.getItem('cms_admin_secret') || '';
       document.getElementById('settings-modal').classList.remove('hidden');
     }
 
@@ -1044,8 +1048,9 @@
       const url = document.getElementById('cfg-modal-worker-url').value.trim();
       const secret = document.getElementById('cfg-modal-admin-secret').value.trim();
       workerApiUrl = url;
-      adminSecret = secret;
+      adminToken = secret;
       localStorage.setItem('cms_worker_url', url);
+      localStorage.setItem('cd_admin_token', secret);
       localStorage.setItem('cms_admin_secret', secret);
       closeSettingsModal();
       showToast('API 設定已儲存', 'success');
@@ -1331,7 +1336,9 @@
         updateModalImagePreview(finalUrl);
         showToast('✨ 封面圖已成功上傳至 Cloudflare R2！', 'success');
       } catch (err) {
-        showToast(`上傳提示：${err.message}（已為您套用本機預覽）`, 'error');
+        showToast(`上傳失敗：${err.message}`, 'error');
+      } finally {
+        event.target.value = '';
       }
     }
 
@@ -1459,12 +1466,20 @@
         if (key === 'founderImage') {
           currentContent.assets.avatar = finalUrl;
         }
+        if (key === 'logo') {
+          if (!currentContent.site) currentContent.site = {};
+          currentContent.site.logoUrl = finalUrl;
+          if (!currentContent.siteInfo) currentContent.siteInfo = {};
+          currentContent.siteInfo.logoUrl = finalUrl;
+        }
 
         markDirty();
         renderAssetsPanel();
         showToast('✨ 圖片已成功上傳至 Cloudflare R2！請點擊上方「一鍵發佈至 KV」保存', 'success');
       } catch (err) {
         showToast(`上傳失敗：${err.message}`, 'error');
+      } finally {
+        event.target.value = '';
       }
     }
 
@@ -1654,7 +1669,34 @@
 
     function fileToCompressedBase64(file, maxWidth = 1920, maxHeight = 1920, quality = 0.85) {
       return new Promise((resolve, reject) => {
-        if (file.type === 'image/svg+xml' || file.size < 300 * 1024) {
+        const isSvg = file.type === 'image/svg+xml' || (file.name && file.name.toLowerCase().endsWith('.svg'));
+        
+        if (isSvg) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const res = e.target.result;
+              if (typeof res === 'string' && res.startsWith('data:')) {
+                resolve(res);
+              } else {
+                // If read as text/binary, convert to safe Data URL
+                const text = typeof res === 'string' ? res : new TextDecoder().decode(res);
+                const base64 = btoa(unescape(encodeURIComponent(text)));
+                resolve(`data:image/svg+xml;base64,${base64}`);
+              }
+            } catch (err) {
+              const directReader = new FileReader();
+              directReader.onload = () => resolve(directReader.result);
+              directReader.onerror = reject;
+              directReader.readAsDataURL(file);
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+          return;
+        }
+
+        if (file.size < 300 * 1024) {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result);
           reader.onerror = reject;
