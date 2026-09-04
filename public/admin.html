@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>維度影學 ｜ 雲端內容管理後台 (CineDimension CMS v4.2)</title>
+  <title>維度影學 ｜ 雲端內容管理後台 (CineDimension CMS v5.0)</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
   
   <!-- Tailwind CSS CDN -->
@@ -21,9 +21,9 @@
               600: '#8c6843',
               900: '#1a1815',
             },
-            darkbg: '#0b0d11',
-            darkcard: '#141720',
-            darkborder: '#202634',
+            darkbg: '#08090c',
+            darkcard: '#12161f',
+            darkborder: '#1f2533',
           }
         }
       }
@@ -59,9 +59,9 @@
     }
 
     .glass-panel {
-      background: rgba(18, 22, 31, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.07);
+      background: rgba(18, 22, 31, 0.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
   </style>
 </head>
@@ -80,7 +80,7 @@
           <h1 class="text-base font-bold tracking-tight text-white">維度影學 Cine Dimension</h1>
           <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">KV + R2 Cloud CMS</span>
         </div>
-        <p id="header-api-indicator" class="text-xs text-slate-400">官方獨立後台系統 (iPad / Safari 相容)</p>
+        <p id="header-api-indicator" class="text-xs text-slate-400">連線節點：cms-api.cine-dimension.com</p>
       </div>
     </div>
 
@@ -89,19 +89,29 @@
       <!-- Sync Status Badge -->
       <div id="sync-status" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-emerald-400 text-xs font-medium">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="sync-status-text">KV 資料已連線</span>
+        <span id="sync-status-text">KV 已連線</span>
       </div>
 
       <!-- Dirty State Indicator -->
       <div id="dirty-badge" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-400 text-xs font-medium">
         <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-        <span>有未發佈變更</span>
+        <span>未發佈</span>
       </div>
 
-      <!-- Save & Publish Button -->
+      <!-- Ping Diagnostics Quick Button -->
+      <button 
+        onclick="testApiConnection(true)"
+        title="測試 API 連線"
+        class="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-medium rounded-xl transition-all cursor-pointer"
+      >
+        <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>Ping 診斷</span>
+      </button>
+
+      <!-- Save & Publish Button (publishToKV) -->
       <button 
         id="btn-publish-all"
-        onclick="publishAllChanges()"
+        onclick="publishToKV()"
         class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-950/30 active:scale-95 transition-all cursor-pointer"
       >
         <i data-lucide="cloud-upload" class="w-4 h-4"></i>
@@ -143,7 +153,7 @@
   <!-- ========================================== -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
-    <!-- LOGIN / AUTH SCREEN (IF NOT LOGGED IN) -->
+    <!-- LOGIN / AUTH SCREEN -->
     <div id="login-view" class="hidden max-w-md mx-auto my-12 p-8 rounded-2xl glass-panel border border-slate-800 space-y-6 text-center">
       <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
         <i data-lucide="lock" class="w-7 h-7"></i>
@@ -159,10 +169,10 @@
           <input 
             type="url" 
             id="login-worker-url" 
-            placeholder="https://cinedimension-cms.select03.workers.dev"
+            placeholder="https://cms-api.cine-dimension.com"
             class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-amber-500"
           />
-          <p class="text-[10px] text-slate-500 mt-1">預設已自動指派至官方 Cloudflare Worker</p>
+          <p class="text-[10px] text-slate-500 mt-1">預設已自動指派至 https://cms-api.cine-dimension.com</p>
         </div>
 
         <div>
@@ -179,14 +189,14 @@
           onclick="handleLoginSubmit()"
           class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-950/40 transition-all cursor-pointer"
         >
-          立即登入
+          立即驗證登入
         </button>
 
         <button 
           onclick="enterDirectEditMode()"
           class="w-full py-2 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs rounded-xl border border-slate-800 transition-all cursor-pointer"
         >
-          以本機模式進入編輯
+          以預設模式直接進入後台
         </button>
       </div>
     </div>
@@ -251,7 +261,7 @@
             class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs transition-all cursor-pointer"
           >
             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-            <span>重設為官方 6 大作品</span>
+            <span>重設官方 6 大作品</span>
           </button>
         </div>
       </div>
@@ -275,7 +285,7 @@
               <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
               <span>Cloudflare R2 圖床資產管理</span>
             </h3>
-            <p class="text-xs text-slate-400 mt-1">管理官方 Logo 與創辦人形象照，支援原生二進制直接上傳至 R2 物件儲存 (無 Base64 限制)。</p>
+            <p class="text-xs text-slate-400 mt-1">管理官方 Logo 與創辦人形象照。透過原生 FormData 二進制直傳至 R2，並自動組裝為 https://assets.cine-dimension.com/...</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -297,7 +307,7 @@
                   src="https://assets.cine-dimension.com/Logo.svg" 
                   alt="Brand Logo" 
                   class="max-h-full max-w-full object-contain filter drop-shadow-md"
-                  onerror="this.style.display='none'"
+                  onerror="this.style.display='none'; document.getElementById('empty-asset-logo').classList.remove('hidden');"
                 />
                 <div id="empty-asset-logo" class="hidden text-xs text-slate-500">尚無 Logo</div>
               </div>
@@ -314,14 +324,14 @@
               </div>
 
               <div>
-                <label class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-all">
+                <label id="label-upload-logo" class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-all">
                   <i data-lucide="upload-cloud" class="w-4 h-4 text-amber-400"></i>
-                  <span>上傳新 Logo 至 Cloudflare R2</span>
+                  <span id="text-upload-logo">上傳新 Logo 直傳至 Cloudflare R2</span>
                   <input 
                     type="file" 
                     accept="image/svg+xml,image/png,image/jpeg,image/webp" 
                     class="hidden" 
-                    onchange="handleAssetUpload(event, 'logo')"
+                    onchange="handleAssetFileSelect(event, 'logo')"
                   />
                 </label>
               </div>
@@ -345,7 +355,7 @@
                   src="https://assets.cine-dimension.com/avatar.JPG" 
                   alt="Founder Avatar" 
                   class="w-24 h-24 rounded-full object-cover border-2 border-amber-500/40 shadow-lg"
-                  onerror="this.style.display='none'"
+                  onerror="this.style.display='none'; document.getElementById('empty-asset-founder').classList.remove('hidden');"
                 />
                 <div id="empty-asset-founder" class="hidden text-xs text-slate-500">尚無形象照</div>
               </div>
@@ -362,14 +372,14 @@
               </div>
 
               <div>
-                <label class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-all">
+                <label id="label-upload-founder" class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-all">
                   <i data-lucide="upload-cloud" class="w-4 h-4 text-amber-400"></i>
-                  <span>上傳新頭像至 Cloudflare R2</span>
+                  <span id="text-upload-founder">上傳新頭像直傳至 Cloudflare R2</span>
                   <input 
                     type="file" 
                     accept="image/png,image/jpeg,image/webp" 
                     class="hidden" 
-                    onchange="handleAssetUpload(event, 'founderImage')"
+                    onchange="handleAssetFileSelect(event, 'founderImage')"
                   />
                 </label>
               </div>
@@ -388,7 +398,7 @@
               <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
               <span>全站品牌文案與社群設定</span>
             </h3>
-            <p class="text-xs text-slate-400 mt-1">更新品牌名稱、標語、聯絡信箱與社群媒體連結。</p>
+            <p class="text-xs text-slate-400 mt-1">更新品牌名稱、標語、聯絡信箱與社群媒體連結，儲存後點選右上角「一鍵發佈至 KV」即可生效。</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -498,8 +508,8 @@
                   <th class="p-3.5">時間</th>
                   <th class="p-3.5">姓名</th>
                   <th class="p-3.5">電話</th>
-                  <th class="p-3.5">Email / LINE</th>
-                  <th class="p-3.5">項目</th>
+                  <th class="p-3.5">Email</th>
+                  <th class="p-3.5">諮詢項目</th>
                   <th class="p-3.5">需求說明</th>
                 </tr>
               </thead>
@@ -640,10 +650,10 @@
               <span>若無指定圖片，自動從 YouTube 取得封面</span>
             </label>
 
-            <!-- Direct File Upload to R2 -->
-            <label class="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-semibold cursor-pointer">
+            <!-- Direct File Upload to R2 (uploadToR2) -->
+            <label id="modal-upload-btn-label" class="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-semibold cursor-pointer">
               <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-              <span>從本機上傳圖片至 R2</span>
+              <span id="modal-upload-btn-text">上傳圖片直傳 R2</span>
               <input 
                 type="file" 
                 accept="image/*" 
@@ -719,7 +729,7 @@
           <input 
             type="url" 
             id="cfg-modal-worker-url" 
-            placeholder="https://cinedimension-cms.select03.workers.dev"
+            placeholder="https://cms-api.cine-dimension.com"
             class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:outline-none focus:border-amber-500"
           />
           <div class="flex items-center justify-between mt-1.5">
@@ -729,7 +739,7 @@
               onclick="resetToDefaultWorkerUrl()" 
               class="text-[10px] text-amber-400 hover:underline cursor-pointer"
             >
-              填入官方 Worker 網址
+              重設為官方網址
             </button>
           </div>
         </div>
@@ -751,13 +761,13 @@
             <span class="font-semibold text-slate-300">連線診斷與測試</span>
             <button 
               id="btn-test-connection"
-              onclick="testWorkerConnection()"
+              onclick="testApiConnection(false)"
               class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-bold border border-amber-500/20 cursor-pointer transition-all"
             >
               測試連線 Ping
             </button>
           </div>
-          <div id="connection-test-result" class="text-[11px] text-slate-400">
+          <div id="connection-test-result" class="text-[11px] text-slate-400 leading-relaxed">
             點擊「測試連線」以檢查 Worker API 與金鑰是否正常運作。
           </div>
         </div>
@@ -774,13 +784,13 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
   <!-- ========================================== -->
-  <!-- JAVASCRIPT CMS LOGIC -->
+  <!-- JAVASCRIPT CMS LOGIC (v5.0) -->
   <!-- ========================================== -->
   <script>
-    // 官方預設 Cloudflare Worker API 網址 (代碼、資料庫與圖床資產徹底解耦)
-    const DEFAULT_WORKER_URL = 'https://cinedimension-cms.select03.workers.dev';
+    // 預設官方 Cloudflare Worker API 網址 (依需求設定為 cms-api.cine-dimension.com)
+    const DEFAULT_WORKER_URL = 'https://cms-api.cine-dimension.com';
 
-    // LocalStorage Keys
+    // LocalStorage 鍵值統整
     const STORAGE_KEY_PASS = 'cinedimension_admin_pass';
     const STORAGE_KEY_WORKER_URL = 'cinedimension_worker_url';
 
@@ -812,6 +822,69 @@
     function setStoredWorkerUrl(url) {
       localStorage.setItem(STORAGE_KEY_WORKER_URL, url);
       localStorage.setItem('cms_worker_url', url);
+    }
+
+    /**
+     * 智能取得 API 基礎網址 (自訂值優先，自動去除結尾斜線)
+     */
+    function getApiBase() {
+      const modalInput = document.getElementById('cfg-modal-worker-url')?.value?.trim();
+      const loginInput = document.getElementById('login-worker-url')?.value?.trim();
+      const stored = getStoredWorkerUrl();
+
+      let targetUrl = modalInput || loginInput || stored || DEFAULT_WORKER_URL;
+      return targetUrl.replace(/\/+$/, '');
+    }
+
+    /**
+     * =========================================================================
+     * 1. 安全標準化 Fetch 封裝 (safeApiFetch)
+     * 關鍵修正：
+     * - 強制 credentials: 'omit'，避免跨子網域 (cine-dimension.com -> cms-api.cine-dimension.com) 
+     *   與 Access-Control-Allow-Origin: * 衝突產生 Load failed！
+     * - 自動附加 Authorization: Bearer <token> 與 X-Admin-Token 雙標頭
+     * - 若 body 為 FormData，絕不手動設定 Content-Type，讓瀏覽器自動加上 multipart boundary
+     * =========================================================================
+     */
+    async function safeApiFetch(endpoint, options = {}) {
+      const apiBase = getApiBase();
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      const url = `${apiBase}${cleanEndpoint}`;
+
+      const token = getStoredPass() || 'admin888';
+
+      // 準備 Headers
+      const headers = new Headers(options.headers || {});
+      headers.set('Authorization', `Bearer ${token}`);
+      headers.set('X-Admin-Token', token);
+      headers.set('X-Admin-Pass', token);
+
+      let body = options.body;
+
+      // 若 body 為一般物件且非 FormData，自動序列化並設置 Content-Type
+      if (body && typeof body === 'object' && !(body instanceof FormData)) {
+        if (!headers.has('Content-Type')) {
+          headers.set('Content-Type', 'application/json');
+        }
+        body = JSON.stringify(body);
+      }
+
+      const fetchOptions = {
+        method: options.method || 'GET',
+        headers,
+        body,
+        // 關鍵：跨子網域安全政策強制使用 omit，解決 Safari 與 Chrome 的 CORS Load failed
+        credentials: 'omit',
+        mode: 'cors'
+      };
+
+      try {
+        const response = await fetch(url, fetchOptions);
+        return response;
+      } catch (networkError) {
+        console.error(`[safeApiFetch Network Error] ${url}:`, networkError);
+        throw new Error(`連線失敗 (Load failed)：無法連線至 Worker API [${url}]，請檢查網路或 Worker 狀態。`);
+      }
     }
 
     // 預設精選 6 大作品集
@@ -914,9 +987,7 @@
       }
     ];
 
-    // App State
-    let adminToken = getStoredPass();
-    let workerApiUrl = getStoredWorkerUrl();
+    // 全域狀態
     let currentContent = {
       siteInfo: {
         title: '維度影學 Cine Dimension',
@@ -937,37 +1008,22 @@
     };
     let isDirty = false;
 
-    // Initialization
+    // 初始化流程
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
 
-      const savedWorkerUrl = getStoredWorkerUrl();
-      if (savedWorkerUrl) {
-        workerApiUrl = savedWorkerUrl;
-        document.getElementById('login-worker-url').value = savedWorkerUrl;
-        document.getElementById('cfg-modal-worker-url').value = savedWorkerUrl;
-      } else {
-        // Automatically prefill official worker url
-        document.getElementById('login-worker-url').value = DEFAULT_WORKER_URL;
-        document.getElementById('cfg-modal-worker-url').value = DEFAULT_WORKER_URL;
-      }
-      
+      const savedUrl = getStoredWorkerUrl() || DEFAULT_WORKER_URL;
+      document.getElementById('login-worker-url').value = savedUrl;
+      document.getElementById('cfg-modal-worker-url').value = savedUrl;
+
       const savedSecret = getStoredPass();
-      if (savedSecret) {
-        document.getElementById('login-admin-secret').value = savedSecret;
-        document.getElementById('cfg-modal-admin-secret').value = savedSecret;
-        adminToken = savedSecret;
-        showDashboard();
-      } else {
-        // Direct entry with default password for convenience
-        adminToken = 'admin888';
-        setStoredPass('admin888');
-        document.getElementById('login-admin-secret').value = 'admin888';
-        showDashboard();
-      }
+      document.getElementById('login-admin-secret').value = savedSecret;
+      document.getElementById('cfg-modal-admin-secret').value = savedSecret;
+
+      updateHeaderApiIndicator();
+      showDashboard();
     });
 
-    // Navigation & Auth Flow
     function showDashboard() {
       document.getElementById('login-view').classList.add('hidden');
       document.getElementById('dashboard-view').classList.remove('hidden');
@@ -975,377 +1031,497 @@
       loadContentFromKV();
     }
 
-    /**
-     * 智能取得 API 基礎網址 (最高優先級：自訂設定 > 儲存值 > 雲端 Worker 預設值)
-     */
-    function getApiBase() {
-      const modalInput = document.getElementById('cfg-modal-worker-url')?.value?.trim();
-      const loginInput = document.getElementById('login-worker-url')?.value?.trim();
-      const stored = getStoredWorkerUrl();
-
-      let targetUrl = modalInput || loginInput || workerApiUrl || stored;
-
-      // 若在自訂網域 (如 cine-dimension.com) 且未特別指定 Worker 網址，自動採用官方 Worker
-      if (!targetUrl) {
-        const host = window.location.hostname;
-        if (host !== 'localhost' && host !== '127.0.0.1' && !host.includes('run.app')) {
-          targetUrl = DEFAULT_WORKER_URL;
-        }
-      }
-
-      return (targetUrl || '').replace(/\/+$/, '');
-    }
-
-    function getAuthHeaders() {
-      const token = adminToken || getStoredPass() || 'admin888';
-      return {
-        'Authorization': `Bearer ${token}`,
-        'X-Admin-Pass': token,
-        'X-Admin-Secret': token
-      };
-    }
-
     function updateHeaderApiIndicator() {
       const apiBase = getApiBase();
       const el = document.getElementById('header-api-indicator');
-      if (!el) return;
-      if (apiBase) {
+      if (el) {
         el.innerHTML = `連線節點：<span class="text-amber-400 font-mono">${apiBase.replace(/^https?:\/\//, '')}</span>`;
-      } else {
-        el.textContent = '官方獨立後台系統 (iPad / Safari 相容)';
       }
     }
 
-    function resetToDefaultWorkerUrl() {
-      document.getElementById('cfg-modal-worker-url').value = DEFAULT_WORKER_URL;
-      document.getElementById('login-worker-url').value = DEFAULT_WORKER_URL;
-      workerApiUrl = DEFAULT_WORKER_URL;
-      setStoredWorkerUrl(DEFAULT_WORKER_URL);
-      showToast('已填入官方 Cloudflare Worker 網址', 'info');
-    }
-
-    async function testWorkerConnection() {
-      const btn = document.getElementById('btn-test-connection');
+    /**
+     * =========================================================================
+     * 2. Ping 診斷函式 (testApiConnection)
+     * 發送 GET /api/ping 檢測 Worker、KV 與 R2 狀態
+     * =========================================================================
+     */
+    async function testApiConnection(isQuickPing = false) {
       const resBox = document.getElementById('connection-test-result');
-      const url = document.getElementById('cfg-modal-worker-url').value.trim() || getApiBase();
-      const secret = document.getElementById('cfg-modal-admin-secret').value.trim() || getStoredPass();
-
-      if (!url) {
-        resBox.innerHTML = '<span class="text-rose-400">請先輸入 Worker 網址</span>';
-        return;
+      const btn = document.getElementById('btn-test-connection');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '檢測中...';
       }
 
-      btn.disabled = true;
-      btn.textContent = '測試中...';
-      resBox.innerHTML = '<span class="text-slate-400">正在向 Worker 發送連線測試請求...</span>';
+      if (resBox && !isQuickPing) {
+        resBox.innerHTML = '<span class="text-slate-400">正在向 Worker 發送連線測試 Ping...</span>';
+      }
 
       const startTime = performance.now();
       try {
-        const verifyRes = await fetch(`${url.replace(/\/+$/, '')}/api/verify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${secret}`,
-            'X-Admin-Pass': secret,
-            'X-Admin-Secret': secret
-          }
-        });
-
+        const response = await safeApiFetch('/api/ping');
         const elapsed = Math.round(performance.now() - startTime);
-        const data = await verifyRes.json().catch(() => ({}));
 
-        if (verifyRes.ok && data.success) {
-          resBox.innerHTML = `<span class="text-emerald-400 font-semibold"> 連線成功！(${elapsed}ms) - Worker API 與 ADMIN_PASS 驗證通過</span>`;
-        } else if (verifyRes.status === 401) {
-          resBox.innerHTML = `<span class="text-amber-400">⚠️ Worker 正常連線 (${elapsed}ms)，但管理員金鑰錯誤，請確認 ADMIN_PASS 設定。</span>`;
-        } else {
-          resBox.innerHTML = `<span class="text-rose-400">⚠️ 收到狀態碼 ${verifyRes.status}：${data.error || '未預期回應'}</span>`;
+        if (!response.ok) {
+          throw new Error(`HTTP 狀態碼 ${response.status} (${response.statusText})`);
         }
+
+        const data = await response.json();
+        const kvStatus = data.kvReady ? '🟢 KV 正常' : '⚠️ KV 未綁定';
+        const r2Status = data.r2Ready ? '🟢 R2 正常' : '⚠️ R2 未綁定';
+
+        const successMessage = `🟢 連線成功！(${elapsed}ms) - ${kvStatus} ｜ ${r2Status}`;
+
+        if (resBox) {
+          resBox.innerHTML = `
+            <div class="space-y-1 text-emerald-400">
+              <div class="font-bold flex items-center gap-1">
+                <span>🟢 連線正常 (耗時 ${elapsed}ms)</span>
+              </div>
+              <div class="text-[10px] text-slate-300">
+                • 服務狀態：${data.message || 'API 運作中'}<br>
+                • Cloudflare KV：${data.kvReady ? '<span class="text-emerald-400">已就緒 (SITE_KV)</span>' : '<span class="text-rose-400">未綁定 (SITE_KV)</span>'}<br>
+                • Cloudflare R2：${data.r2Ready ? '<span class="text-emerald-400">已就緒 (MEDIA_BUCKET)</span>' : '<span class="text-rose-400">未綁定 (MEDIA_BUCKET)</span>'}<br>
+                • 公開圖床網域：${data.publicDomain || 'assets.cine-dimension.com'}
+              </div>
+            </div>
+          `;
+        }
+
+        // 更新頂部連線 Badge
+        const syncBadge = document.getElementById('sync-status');
+        const syncText = document.getElementById('sync-status-text');
+        if (syncBadge && syncText) {
+          syncBadge.classList.remove('hidden');
+          syncBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-emerald-400 text-xs font-medium';
+          syncText.textContent = `KV+R2 已連線 (${elapsed}ms)`;
+        }
+
+        showToast(successMessage, 'success');
       } catch (err) {
-        resBox.innerHTML = `<span class="text-rose-400 font-semibold">❌ 連線失敗 (${err.message})。請確認 Worker 網址正確且已發布至 Cloudflare。</span>`;
+        console.error('[Ping Error]:', err);
+        const errMsg = `🔴 連線失敗：${err.message}`;
+        if (resBox) {
+          resBox.innerHTML = `<span class="text-rose-400 font-semibold">${errMsg}</span>`;
+        }
+
+        const syncBadge = document.getElementById('sync-status');
+        const syncText = document.getElementById('sync-status-text');
+        if (syncBadge && syncText) {
+          syncBadge.classList.remove('hidden');
+          syncBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-950/40 border border-rose-800/60 text-rose-400 text-xs font-medium';
+          syncText.textContent = '連線異常 (請檢查網址)';
+        }
+
+        showToast(errMsg, 'error');
       } finally {
-        btn.disabled = false;
-        btn.textContent = '測試連線 Ping';
-      }
-    }
-
-    async function handleLoginSubmit() {
-      const url = document.getElementById('login-worker-url').value.trim() || DEFAULT_WORKER_URL;
-      const secret = document.getElementById('login-admin-secret').value.trim();
-
-      workerApiUrl = url;
-      adminToken = secret;
-      setStoredWorkerUrl(url);
-      setStoredPass(secret);
-
-      // Verify token with worker if url is provided
-      if (url) {
-        try {
-          const verifyRes = await fetch(`${url.replace(/\/+$/, '')}/api/verify`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${secret}`,
-              'X-Admin-Pass': secret,
-              'X-Admin-Secret': secret
-            }
-          });
-          if (!verifyRes.ok && verifyRes.status === 401) {
-            showToast('金鑰驗證失敗，請檢查 ADMIN_PASS 是否正確', 'error');
-            return;
-          }
-        } catch (e) {
-          console.warn('驗證連線提示:', e);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '測試連線 Ping';
         }
       }
-
-      showDashboard();
-      showToast('登入成功，正在同步 KV 雲端內容...', 'success');
     }
 
-    function enterDirectEditMode() {
-      adminToken = 'local_edit_mode';
-      setStoredPass('local_edit_mode');
-      showDashboard();
-      showToast('已進入編輯模式，可自由調整 6 大作品集與圖床！', 'info');
-    }
+    /**
+     * =========================================================================
+     * 3. 圖片直傳 R2 (uploadToR2)
+     * 使用標準原生 FormData 二進制直傳，徹底避免 Safari Base64 正規表達式錯誤
+     * =========================================================================
+     */
+    async function uploadToR2(file) {
+      if (!file) {
+        throw new Error('未選取任何檔案');
+      }
 
-    function handleLogout() {
-      if (isDirty && !confirm('您有未發佈的變更，確定要登出嗎？')) return;
-      adminToken = '';
-      removeStoredPass();
-      document.getElementById('login-admin-secret').value = '';
-      document.getElementById('login-view').classList.remove('hidden');
-      document.getElementById('dashboard-view').classList.add('hidden');
-      showToast('已安全登出', 'info');
-    }
+      // 檔案大小防護 (50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        throw new Error('檔案過大，請選擇小於 50MB 的圖片');
+      }
 
-    function switchTab(tabId) {
-      const tabs = ['portfolio', 'assets', 'siteinfo', 'leads'];
-      tabs.forEach(t => {
-        const content = document.getElementById(`tab-content-${t}`);
-        const btn = document.getElementById(`tab-btn-${t}`);
-        if (t === tabId) {
-          content.classList.remove('hidden');
-          btn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/20 cursor-pointer';
-        } else {
-          content.classList.add('hidden');
-          btn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-slate-900 text-slate-400 border border-slate-800 hover:text-white cursor-pointer';
-        }
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+
+      const response = await safeApiFetch('/api/upload', {
+        method: 'POST',
+        body: formData
       });
-      lucide.createIcons();
-      if (tabId === 'leads') {
-        fetchLeadsList();
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || data.message || `上傳失敗 (HTTP ${response.status})`);
       }
+
+      return data.url || data.cdnUrl;
     }
 
-    function openSettingsModal() {
-      document.getElementById('cfg-modal-worker-url').value = getStoredWorkerUrl() || DEFAULT_WORKER_URL;
-      document.getElementById('cfg-modal-admin-secret').value = getStoredPass();
-      document.getElementById('connection-test-result').innerHTML = '點擊「測試連線」以檢查 Worker API 與金鑰是否正常運作。';
-      document.getElementById('settings-modal').classList.remove('hidden');
-      lucide.createIcons();
-    }
+    /**
+     * 處理作品編輯 Modal 內的圖片上傳
+     */
+    async function handleModalImageUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    function closeSettingsModal() {
-      document.getElementById('settings-modal').classList.add('hidden');
-    }
-
-    function saveSettingsFromModal() {
-      const url = document.getElementById('cfg-modal-worker-url').value.trim();
-      const secret = document.getElementById('cfg-modal-admin-secret').value.trim();
-      workerApiUrl = url;
-      adminToken = secret;
-      setStoredWorkerUrl(url);
-      setStoredPass(secret);
-      closeSettingsModal();
-      updateHeaderApiIndicator();
-      showToast('API 設定已儲存', 'success');
-      loadContentFromKV();
-    }
-
-    // ==========================================
-    // DATA SYNC & KV ENGINE
-    // ==========================================
-    async function loadContentFromKV() {
-      const apiBase = getApiBase();
-      const fetchUrl = apiBase ? `${apiBase}/api/content` : '/api/content';
+      const labelText = document.getElementById('modal-upload-btn-text');
+      const originalText = labelText ? labelText.textContent : '上傳圖片直傳 R2';
 
       try {
-        const res = await fetch(fetchUrl, {
-          headers: getAuthHeaders()
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (data.content) {
-          if (Array.isArray(data.content.portfolio) && data.content.portfolio.length > 0) {
-            currentContent.portfolio = data.content.portfolio;
-          }
-          if (data.content.assets) {
-            currentContent.assets = { ...currentContent.assets, ...data.content.assets };
-          }
-          if (data.content.siteInfo) {
-            currentContent.siteInfo = { ...currentContent.siteInfo, ...data.content.siteInfo };
-          }
-        }
-        setClean();
-        showToast('✨ 已同步 Cloudflare KV 最新內容！', 'success');
-      } catch (err) {
-        console.warn('KV 載入提示:', err.message);
-        showToast('目前連線至快取資料，已載入 6 大精選作品集！', 'info');
-      }
+        if (labelText) labelText.textContent = '直傳 R2 中...';
+        showToast('正在將圖片直傳至 Cloudflare R2...', 'info');
 
-      renderAllPanels();
+        const cdnUrl = await uploadToR2(file);
+        
+        // 自動填入輸入框並更新預覽
+        const inputImage = document.getElementById('modal-input-image');
+        if (inputImage) {
+          inputImage.value = cdnUrl;
+        }
+        updateModalImagePreview(cdnUrl);
+
+        showToast('✨ 圖片已成功上傳至 Cloudflare R2！', 'success');
+      } catch (err) {
+        console.error('[Upload Error]:', err);
+        showToast(`上傳失敗：${err.message}`, 'error');
+      } finally {
+        if (labelText) labelText.textContent = originalText;
+        event.target.value = '';
+      }
     }
 
-    async function publishAllChanges() {
-      const apiBase = getApiBase();
-      const saveUrl = apiBase ? `${apiBase}/api/save` : '/api/save';
+    /**
+     * 處理品牌資產 (Logo / Avatar) 的圖片上傳
+     */
+    async function handleAssetFileSelect(event, assetKey) {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
+      const isLogo = assetKey === 'logo';
+      const labelText = document.getElementById(isLogo ? 'text-upload-logo' : 'text-upload-founder');
+      const originalText = labelText ? labelText.textContent : '上傳中...';
+
+      try {
+        if (labelText) labelText.textContent = '直傳 R2 中...';
+        showToast(`正在上傳 ${isLogo ? 'Logo' : '形象照'} 至 R2...`, 'info');
+
+        const cdnUrl = await uploadToR2(file);
+
+        if (isLogo) {
+          currentContent.assets.logo = cdnUrl;
+          currentContent.siteInfo.logoUrl = cdnUrl;
+          document.getElementById('input-asset-logo').value = cdnUrl;
+          const img = document.getElementById('preview-asset-logo');
+          img.src = cdnUrl;
+          img.style.display = 'block';
+          document.getElementById('empty-asset-logo')?.classList.add('hidden');
+        } else {
+          currentContent.assets.founderImage = cdnUrl;
+          currentContent.assets.avatar = cdnUrl;
+          document.getElementById('input-asset-founder').value = cdnUrl;
+          const img = document.getElementById('preview-asset-founder');
+          img.src = cdnUrl;
+          img.style.display = 'block';
+          document.getElementById('empty-asset-founder')?.classList.add('hidden');
+        }
+
+        markDirty();
+        showToast(`🎉 ${isLogo ? 'Logo' : '創辦人頭像'} 上傳成功！請點擊「一鍵發佈至 KV」以更新全站。`, 'success');
+      } catch (err) {
+        console.error('[Asset Upload Error]:', err);
+        showToast(`上傳失敗：${err.message}`, 'error');
+      } finally {
+        if (labelText) labelText.textContent = originalText;
+        event.target.value = '';
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 4. 一鍵發佈至 KV (publishToKV)
+     * 收集作品集、品牌資產、網站設定，發送 POST /api/save
+     * =========================================================================
+     */
+    async function publishToKV() {
       const btn = document.getElementById('btn-publish-all');
+      const originalHtml = btn.innerHTML;
+
       btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>寫入 Cloudflare KV...</span>`;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>發佈中...</span>';
       lucide.createIcons();
 
       try {
-        const res = await fetch(saveUrl, {
+        // 確保資料完整性
+        const payload = {
+          content: {
+            siteInfo: currentContent.siteInfo,
+            assets: currentContent.assets,
+            portfolio: currentContent.portfolio,
+            updatedAt: new Date().toISOString()
+          }
+        };
+
+        const response = await safeApiFetch('/api/save', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders()
-          },
-          body: JSON.stringify({
-            content: currentContent
-          })
+          body: payload
         });
 
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(data.error || `HTTP ${res.status}`);
+        const resData = await response.json();
+        if (!response.ok || !resData.success) {
+          throw new Error(resData.error || resData.message || `發佈失敗 (HTTP ${response.status})`);
         }
 
-        setClean();
-        showToast('🎉 恭喜！網站內容已成功發佈至 Cloudflare KV 雲端資料庫！', 'success');
+        clearDirty();
+        showToast('🎉 全站作品與資產已成功發佈至 Cloudflare KV 雲端資料庫！', 'success');
+        
+        // 更新頂部狀態
+        const syncBadge = document.getElementById('sync-status');
+        const syncText = document.getElementById('sync-status-text');
+        if (syncBadge && syncText) {
+          syncBadge.classList.remove('hidden');
+          syncText.textContent = 'KV 最新資料已同步';
+        }
       } catch (err) {
-        showToast(`發佈失敗：${err.message}。請確認 Worker 網址與 ADMIN_PASS 設定。`, 'error');
+        console.error('[Publish Error]:', err);
+        showToast(`發佈失敗：${err.message}`, 'error');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="cloud-upload" class="w-4 h-4"></i><span>一鍵發佈至 KV</span>`;
+        btn.innerHTML = originalHtml;
         lucide.createIcons();
       }
     }
 
-    function renderAllPanels() {
-      renderPortfolioPanel();
-      renderAssetsPanel();
-      renderSiteInfoPanel();
-      lucide.createIcons();
+    /**
+     * 從 Cloudflare KV 載入資料
+     */
+    async function loadContentFromKV() {
+      const syncText = document.getElementById('sync-status-text');
+      if (syncText) syncText.textContent = '連線讀取中...';
+
+      try {
+        const response = await safeApiFetch('/api/content');
+        if (response.ok) {
+          const res = await response.json();
+          if (res.success && res.content) {
+            const remote = res.content;
+            if (remote.siteInfo) currentContent.siteInfo = { ...currentContent.siteInfo, ...remote.siteInfo };
+            if (remote.assets) currentContent.assets = { ...currentContent.assets, ...remote.assets };
+            if (Array.isArray(remote.portfolio) && remote.portfolio.length > 0) {
+              currentContent.portfolio = remote.portfolio;
+            }
+            if (syncText) syncText.textContent = 'KV 已同步';
+          }
+        }
+      } catch (err) {
+        console.warn('[KV Load Warning]:', err.message);
+        if (syncText) syncText.textContent = '本機快取模式';
+      } finally {
+        populateAllForms();
+        renderPortfolioGrid();
+        clearDirty();
+      }
     }
 
-    // ==========================================
-    // PORTFOLIO PANEL
-    // ==========================================
-    function renderPortfolioPanel() {
+    // 填入所有輸入表單
+    function populateAllForms() {
+      // 品牌與圖床資產
+      const logoUrl = currentContent.assets?.logo || 'https://assets.cine-dimension.com/Logo.svg';
+      const founderUrl = currentContent.assets?.founderImage || currentContent.assets?.avatar || 'https://assets.cine-dimension.com/avatar.JPG';
+
+      const inputLogo = document.getElementById('input-asset-logo');
+      if (inputLogo) inputLogo.value = logoUrl;
+      const prevLogo = document.getElementById('preview-asset-logo');
+      if (prevLogo) {
+        prevLogo.src = logoUrl;
+        prevLogo.style.display = 'block';
+      }
+
+      const inputFounder = document.getElementById('input-asset-founder');
+      if (inputFounder) inputFounder.value = founderUrl;
+      const prevFounder = document.getElementById('preview-asset-founder');
+      if (prevFounder) {
+        prevFounder.src = founderUrl;
+        prevFounder.style.display = 'block';
+      }
+
+      // 全站文案與社群設定
+      const site = currentContent.siteInfo || {};
+      if (document.getElementById('meta-title')) document.getElementById('meta-title').value = site.title || '';
+      if (document.getElementById('meta-email')) document.getElementById('meta-email').value = site.email || '';
+      if (document.getElementById('meta-tagline')) document.getElementById('meta-tagline').value = site.tagline || '';
+      if (document.getElementById('meta-youtube')) document.getElementById('meta-youtube').value = site.youtube || '';
+      if (document.getElementById('meta-facebook')) document.getElementById('meta-facebook').value = site.facebook || '';
+      if (document.getElementById('meta-instagram')) document.getElementById('meta-instagram').value = site.instagram || '';
+      if (document.getElementById('meta-line')) document.getElementById('meta-line').value = site.line || '';
+    }
+
+    // 渲染作品列表卡片
+    function renderPortfolioGrid() {
       const grid = document.getElementById('portfolio-grid');
-      grid.innerHTML = '';
+      if (!grid) return;
 
       const items = currentContent.portfolio || [];
-      document.getElementById('portfolio-count-badge').textContent = `${items.length} 部作品`;
+      const badge = document.getElementById('portfolio-count-badge');
+      if (badge) badge.textContent = `${items.length} 部作品`;
 
-      items.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className = 'p-4 rounded-2xl glass-panel border border-slate-800/80 hover:border-amber-500/50 transition-all flex flex-col justify-between group';
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full p-12 text-center rounded-2xl border border-slate-800 bg-slate-950/40">
+            <p class="text-slate-400 text-sm">目前尚無作品項目</p>
+            <button onclick="restoreDefaultPortfolio()" class="mt-3 px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold">
+              還原預設 6 大作品
+            </button>
+          </div>
+        `;
+        return;
+      }
 
-        const thumb = item.image || getYouTubeThumbnail(item.videoUrl) || '';
+      grid.innerHTML = items.map((item, index) => {
+        const coverImg = item.image || (item.videoUrl ? getYouTubeThumb(item.videoUrl) : '') || 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80';
         const tags = Array.isArray(item.tags) ? item.tags : [];
 
-        card.innerHTML = `
-          <div class="space-y-3">
-            <div class="aspect-video w-full rounded-xl bg-slate-950 overflow-hidden relative border border-slate-800">
+        return `
+          <div class="rounded-2xl glass-panel border border-slate-800/80 overflow-hidden flex flex-col group hover:border-slate-700 transition-all">
+            <!-- Thumbnail preview -->
+            <div class="relative aspect-video w-full bg-slate-950 overflow-hidden">
               <img 
-                src="${thumb}" 
-                alt="${item.title}" 
+                src="${coverImg}" 
+                alt="${escapeHtml(item.title)}" 
                 referrerpolicy="no-referrer"
-                onerror="this.src='https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'"
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                onerror="this.src='https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80'"
               />
-              <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-amber-400 font-bold text-[10px] border border-slate-700">
-                #0${index + 1} ${item.category || '精選'}
-              </span>
-              <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-slate-300 text-[10px]">
-                ${item.year || '2024'}
-              </span>
+              <div class="absolute top-2.5 left-2.5 flex flex-wrap gap-1">
+                <span class="px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-[10px] font-bold text-amber-400 border border-amber-500/20">
+                  #${index + 1}
+                </span>
+                <span class="px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-[10px] font-medium text-slate-300">
+                  ${escapeHtml(item.category || '精選作品')}
+                </span>
+              </div>
+              ${item.videoUrl ? `
+                <div class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-rose-600/90 text-[10px] font-bold text-white flex items-center gap-1">
+                  <i data-lucide="play" class="w-3 h-3"></i>
+                  <span>影片</span>
+                </div>
+              ` : ''}
             </div>
 
-            <div>
-              <h3 class="font-bold text-sm text-white line-clamp-1 group-hover:text-amber-400 transition-colors">${item.title || '未命名作品'}</h3>
-              <p class="text-slate-400 text-xs mt-1 line-clamp-2 leading-relaxed">${item.description || '暫無簡介'}</p>
-            </div>
+            <!-- Content Area -->
+            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h4 class="text-sm font-bold text-white line-clamp-1 group-hover:text-amber-400 transition-colors">
+                  ${escapeHtml(item.title)}
+                </h4>
+                <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                  ${escapeHtml(item.description || '暫無簡介')}
+                </p>
+              </div>
 
-            <div class="flex flex-wrap gap-1">
-              ${tags.map(t => `<span class="px-2 py-0.5 rounded-md bg-slate-900 text-slate-400 text-[10px] border border-slate-800">#${t}</span>`).join('')}
-            </div>
-          </div>
+              <!-- Tags -->
+              <div class="flex flex-wrap gap-1">
+                ${tags.slice(0, 3).map(t => `
+                  <span class="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-[10px] text-slate-400">
+                    ${escapeHtml(t)}
+                  </span>
+                `).join('')}
+              </div>
 
-          <div class="flex items-center justify-between pt-3 mt-3 border-t border-slate-800/60">
-            <div class="flex items-center gap-1">
-              <button 
-                onclick="movePortfolioItem(${index}, -1)" 
-                ${index === 0 ? 'disabled' : ''} 
-                class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                title="往前排序"
-              >
-                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-              </button>
-              <button 
-                onclick="movePortfolioItem(${index}, 1)" 
-                ${index === items.length - 1 ? 'disabled' : ''} 
-                class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                title="往後排序"
-              >
-                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button 
-                onclick="openEditPortfolioModal(${index})"
-                class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs font-semibold border border-amber-500/20 transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <i data-lucide="edit-2" class="w-3 h-3"></i>
-                <span>編輯</span>
-              </button>
-              <button 
-                onclick="deletePortfolioItem(${index})"
-                class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition-all cursor-pointer"
-                title="刪除"
-              >
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
+              <!-- Action Toolbar -->
+              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <span class="text-[10px] text-slate-500">${escapeHtml(item.year || '')} ${escapeHtml(item.clientOrProject || '')}</span>
+                <div class="flex items-center gap-1">
+                  <button 
+                    onclick="movePortfolioItem(${index}, -1)" 
+                    title="往前移動"
+                    class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer ${index === 0 ? 'opacity-30 pointer-events-none' : ''}"
+                  >
+                    <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button 
+                    onclick="movePortfolioItem(${index}, 1)" 
+                    title="往後移動"
+                    class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer ${index === items.length - 1 ? 'opacity-30 pointer-events-none' : ''}"
+                  >
+                    <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button 
+                    onclick="openEditPortfolioModal(${index})" 
+                    class="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <i data-lucide="edit-2" class="w-3 h-3"></i>
+                    <span>編輯</span>
+                  </button>
+                  <button 
+                    onclick="deletePortfolioItem(${index})" 
+                    title="刪除作品"
+                    class="p-1.5 rounded-lg bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-900/30 transition-all cursor-pointer"
+                  >
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         `;
-        grid.appendChild(card);
-      });
+      }).join('');
+
       lucide.createIcons();
     }
 
+    // YouTube 縮圖輔助函式
+    function getYouTubeThumb(url) {
+      if (!url) return '';
+      const reg = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/;
+      const match = url.match(reg);
+      return match ? `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg` : '';
+    }
+
+    function autoFetchYouTubeThumb() {
+      const videoInput = document.getElementById('modal-input-video');
+      const imageInput = document.getElementById('modal-input-image');
+      if (!videoInput || !videoInput.value.trim()) {
+        showToast('請先填入 YouTube 影片網址', 'info');
+        return;
+      }
+      const thumb = getYouTubeThumb(videoInput.value.trim());
+      if (thumb) {
+        imageInput.value = thumb;
+        updateModalImagePreview(thumb);
+        showToast('已成功抓取 YouTube 高畫質封面！', 'success');
+      } else {
+        showToast('無法解析 YouTube 影片 ID，請確認網址格式', 'error');
+      }
+    }
+
+    function updateModalImagePreview(url) {
+      const img = document.getElementById('modal-preview-image');
+      const empty = document.getElementById('modal-empty-image');
+      if (url && url.trim()) {
+        img.src = url.trim();
+        img.classList.remove('hidden');
+        empty.classList.add('hidden');
+      } else {
+        img.classList.add('hidden');
+        empty.classList.remove('hidden');
+      }
+    }
+
+    // Modal 視窗操作
     function openAddPortfolioModal() {
-      document.getElementById('modal-title').innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i><span>新增作品</span>`;
+      document.getElementById('modal-title').innerHTML = '<i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i><span>新增作品</span>';
       document.getElementById('modal-item-index').value = '-1';
-      document.getElementById('modal-item-id').value = String(Date.now());
+      document.getElementById('modal-item-id').value = `portfolio_${Date.now()}`;
+      
       document.getElementById('modal-input-title').value = '';
-      document.getElementById('modal-input-category').value = '商業廣告';
+      document.getElementById('modal-input-category').value = '';
       document.getElementById('modal-input-year').value = new Date().getFullYear().toString();
-      document.getElementById('modal-input-role').value = '導演 / 攝影指導';
+      document.getElementById('modal-input-role').value = '';
       document.getElementById('modal-input-client').value = '';
       document.getElementById('modal-input-desc').value = '';
-      document.getElementById('modal-input-tags').value = '手機攝影, 4K HDR';
+      document.getElementById('modal-input-tags').value = '';
       document.getElementById('modal-input-video').value = '';
-      document.getElementById('modal-input-highlights').value = '';
       document.getElementById('modal-input-image').value = '';
-      updateModalImagePreview('');
+      document.getElementById('modal-input-highlights').value = '';
 
+      updateModalImagePreview('');
       document.getElementById('portfolio-modal').classList.remove('hidden');
       lucide.createIcons();
     }
@@ -1354,9 +1530,10 @@
       const item = currentContent.portfolio[index];
       if (!item) return;
 
-      document.getElementById('modal-title').innerHTML = `<i data-lucide="edit-3" class="w-4 h-4 text-amber-400"></i><span>編輯作品 #${index + 1} - ${item.title || ''}</span>`;
+      document.getElementById('modal-title').innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 text-amber-400"></i><span>編輯作品</span>';
       document.getElementById('modal-item-index').value = index;
-      document.getElementById('modal-item-id').value = item.id || String(Date.now());
+      document.getElementById('modal-item-id').value = item.id || `portfolio_${Date.now()}`;
+
       document.getElementById('modal-input-title').value = item.title || '';
       document.getElementById('modal-input-category').value = item.category || '';
       document.getElementById('modal-input-year').value = item.year || '';
@@ -1365,10 +1542,10 @@
       document.getElementById('modal-input-desc').value = item.description || '';
       document.getElementById('modal-input-tags').value = Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '');
       document.getElementById('modal-input-video').value = item.videoUrl || '';
-      document.getElementById('modal-input-highlights').value = Array.isArray(item.highlights) ? item.highlights.join(', ') : (item.highlights || '');
       document.getElementById('modal-input-image').value = item.image || '';
-      updateModalImagePreview(item.image || '');
+      document.getElementById('modal-input-highlights').value = Array.isArray(item.highlights) ? item.highlights.join(', ') : '';
 
+      updateModalImagePreview(item.image || getYouTubeThumb(item.videoUrl));
       document.getElementById('portfolio-modal').classList.remove('hidden');
       lucide.createIcons();
     }
@@ -1377,97 +1554,45 @@
       document.getElementById('portfolio-modal').classList.add('hidden');
     }
 
-    function autoFetchYouTubeThumb() {
-      const videoUrl = document.getElementById('modal-input-video').value.trim();
-      const thumb = getYouTubeThumbnail(videoUrl);
-      if (thumb) {
-        document.getElementById('modal-input-image').value = thumb;
-        updateModalImagePreview(thumb);
-        showToast('✨ 已自動抓取 YouTube 高畫質封面！', 'success');
-      } else {
-        showToast('請先輸入有效的 YouTube 影片網址（含 youtu.be 或 Shorts）', 'error');
-      }
-    }
-
-    function updateModalImagePreview(url) {
-      const img = document.getElementById('modal-preview-image');
-      const empty = document.getElementById('modal-empty-image');
-      if (url) {
-        img.src = url;
-        img.classList.remove('hidden');
-        empty.classList.add('hidden');
-      } else {
-        img.src = '';
-        img.classList.add('hidden');
-        empty.classList.remove('hidden');
-      }
-    }
-
-    // Direct Binary Multipart Upload for Portfolio Modal Image
-    async function handleModalImageUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      showToast(`正在上傳 ${file.name} 至 Cloudflare R2...`, 'info');
-      try {
-        const result = await uploadImageFileToR2(file);
-        const finalUrl = result.url || result.rawUrl;
-        document.getElementById('modal-input-image').value = finalUrl;
-        document.getElementById('modal-auto-yt-thumb').checked = false;
-        updateModalImagePreview(finalUrl);
-        showToast('✨ 封面圖已成功上傳至 Cloudflare R2！', 'success');
-      } catch (err) {
-        showToast(`上傳失敗：${err.message}`, 'error');
-      } finally {
-        event.target.value = '';
-      }
-    }
-
     function savePortfolioModalItem() {
-      const index = parseInt(document.getElementById('modal-item-index').value, 10);
-      const id = document.getElementById('modal-item-id').value;
       const title = document.getElementById('modal-input-title').value.trim();
-      const category = document.getElementById('modal-input-category').value.trim();
-      const year = document.getElementById('modal-input-year').value.trim();
-      const role = document.getElementById('modal-input-role').value.trim();
-      const clientOrProject = document.getElementById('modal-input-client').value.trim();
-      const description = document.getElementById('modal-input-desc').value.trim();
-      const rawTags = document.getElementById('modal-input-tags').value.trim();
-      const videoUrl = document.getElementById('modal-input-video').value.trim();
-      const rawHighlights = document.getElementById('modal-input-highlights').value.trim();
-      let image = document.getElementById('modal-input-image').value.trim();
-
-      // If image is empty but videoUrl exists, auto-fallback to YT thumbnail
-      if (!image && videoUrl) {
-        const autoYt = document.getElementById('modal-auto-yt-thumb').checked;
-        if (autoYt) {
-          image = getYouTubeThumbnail(videoUrl) || '';
-        }
-      }
-
       if (!title) {
-        showToast('請輸入作品名稱！', 'error');
+        showToast('請填寫作品名稱', 'error');
         return;
       }
 
-      const tags = rawTags ? rawTags.split(/[,，]/).map(t => t.trim()).filter(Boolean) : [];
-      const highlights = rawHighlights ? rawHighlights.split(/[,，]/).map(h => h.trim()).filter(Boolean) : [];
+      const index = parseInt(document.getElementById('modal-item-index').value, 10);
+      const id = document.getElementById('modal-item-id').value;
+      const category = document.getElementById('modal-input-category').value.trim();
+      const year = document.getElementById('modal-input-year').value.trim();
+      const role = document.getElementById('modal-input-role').value.trim();
+      const client = document.getElementById('modal-input-client').value.trim();
+      const desc = document.getElementById('modal-input-desc').value.trim();
+      const tagsStr = document.getElementById('modal-input-tags').value.trim();
+      const videoUrl = document.getElementById('modal-input-video').value.trim();
+      let imageUrl = document.getElementById('modal-input-image').value.trim();
+      const highlightsStr = document.getElementById('modal-input-highlights').value.trim();
+
+      if (!imageUrl && videoUrl && document.getElementById('modal-auto-yt-thumb')?.checked) {
+        imageUrl = getYouTubeThumb(videoUrl);
+      }
+
+      const tags = tagsStr ? tagsStr.split(/[,，]/).map(s => s.trim()).filter(Boolean) : [];
+      const highlights = highlightsStr ? highlightsStr.split(/[,，]/).map(s => s.trim()).filter(Boolean) : [];
 
       const newItem = {
-        id: id || String(Date.now()),
+        id: id || `item_${Date.now()}`,
         title,
-        category: category || '精選作品',
-        year: year || '2024',
-        role: role || '導演',
-        clientOrProject: clientOrProject || '維度影學',
-        description,
+        category,
+        year,
+        role,
+        clientOrProject: client,
+        description: desc,
         tags,
         videoUrl,
-        highlights,
-        image: image || 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'
+        image: imageUrl,
+        highlights
       };
-
-      if (!currentContent.portfolio) currentContent.portfolio = [];
 
       if (index >= 0 && index < currentContent.portfolio.length) {
         currentContent.portfolio[index] = newItem;
@@ -1476,346 +1601,240 @@
       }
 
       markDirty();
+      renderPortfolioGrid();
       closePortfolioModal();
-      renderPortfolioPanel();
-      showToast('作品已暫存，請點擊右上角「一鍵發佈至 KV」以永久保存！', 'success');
+      showToast('作品已暫存，請點擊「一鍵發佈至 KV」以生效', 'info');
     }
 
     function deletePortfolioItem(index) {
-      const item = currentContent.portfolio[index];
-      if (!item) return;
-      if (confirm(`確定要刪除「${item.title}」嗎？`)) {
-        currentContent.portfolio.splice(index, 1);
-        markDirty();
-        renderPortfolioPanel();
-        showToast('已移除作品，請記得點擊「一鍵發佈」保存', 'info');
-      }
+      if (!confirm('確定要刪除這部作品嗎？')) return;
+      currentContent.portfolio.splice(index, 1);
+      markDirty();
+      renderPortfolioGrid();
+      showToast('已刪除作品', 'info');
     }
 
-    function movePortfolioItem(index, offset) {
-      const targetIndex = index + offset;
+    function movePortfolioItem(index, direction) {
+      const targetIndex = index + direction;
       if (targetIndex < 0 || targetIndex >= currentContent.portfolio.length) return;
       const temp = currentContent.portfolio[index];
       currentContent.portfolio[index] = currentContent.portfolio[targetIndex];
       currentContent.portfolio[targetIndex] = temp;
       markDirty();
-      renderPortfolioPanel();
+      renderPortfolioGrid();
     }
 
     function restoreDefaultPortfolio() {
-      if (confirm('確定要恢復為官方預設 6 大作品集嗎？這將覆蓋目前的清單。')) {
-        currentContent.portfolio = JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO));
-        markDirty();
-        renderPortfolioPanel();
-        showToast('已載入預設 6 大作品集！請點擊「一鍵發佈」更新至雲端', 'success');
-      }
-    }
-
-    // ==========================================
-    // ASSETS PANEL (LOGO & FOUNDER)
-    // ==========================================
-    function renderAssetsPanel() {
-      const assets = currentContent.assets || {};
-      const logoUrl = assets.logo || currentContent.siteInfo?.logoUrl || '';
-      const founderUrl = assets.founderImage || assets.avatar || '';
-
-      document.getElementById('input-asset-logo').value = logoUrl;
-      document.getElementById('input-asset-founder').value = founderUrl;
-
-      const previewLogo = document.getElementById('preview-asset-logo');
-      const emptyLogo = document.getElementById('empty-asset-logo');
-      if (logoUrl) {
-        previewLogo.src = logoUrl;
-        previewLogo.classList.remove('hidden');
-        emptyLogo.classList.add('hidden');
-      } else {
-        previewLogo.classList.add('hidden');
-        emptyLogo.classList.remove('hidden');
-      }
-
-      const previewFounder = document.getElementById('preview-asset-founder');
-      const emptyFounder = document.getElementById('empty-asset-founder');
-      if (founderUrl) {
-        previewFounder.src = founderUrl;
-        previewFounder.classList.remove('hidden');
-        emptyFounder.classList.add('hidden');
-      } else {
-        previewFounder.classList.add('hidden');
-        emptyFounder.classList.remove('hidden');
-      }
-    }
-
-    function resetToDefaultLogo() {
-      if (!currentContent.assets) currentContent.assets = {};
-      currentContent.assets.logo = 'https://assets.cine-dimension.com/Logo.svg';
+      if (!confirm('確定要重設為官方精選的 6 大經典作品集嗎？未發布的自訂修改將被覆蓋。')) return;
+      currentContent.portfolio = JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO));
       markDirty();
-      renderAssetsPanel();
-      showToast('已恢復 R2 官方預設 Logo！請點擊「一鍵發佈」保存', 'success');
+      renderPortfolioGrid();
+      showToast('已還原為官方 6 大經典作品集', 'success');
+    }
+
+    // 品牌與設定處理
+    function resetToDefaultLogo() {
+      const defaultLogo = 'https://assets.cine-dimension.com/Logo.svg';
+      currentContent.assets.logo = defaultLogo;
+      currentContent.siteInfo.logoUrl = defaultLogo;
+      document.getElementById('input-asset-logo').value = defaultLogo;
+      const img = document.getElementById('preview-asset-logo');
+      img.src = defaultLogo;
+      img.style.display = 'block';
+      markDirty();
+      showToast('已恢復官方 R2 預設 Logo', 'info');
     }
 
     function resetToDefaultAvatar() {
-      if (!currentContent.assets) currentContent.assets = {};
-      currentContent.assets.founderImage = 'https://assets.cine-dimension.com/avatar.JPG';
-      currentContent.assets.avatar = 'https://assets.cine-dimension.com/avatar.JPG';
+      const defaultAvatar = 'https://assets.cine-dimension.com/avatar.JPG';
+      currentContent.assets.founderImage = defaultAvatar;
+      currentContent.assets.avatar = defaultAvatar;
+      document.getElementById('input-asset-founder').value = defaultAvatar;
+      const img = document.getElementById('preview-asset-founder');
+      img.src = defaultAvatar;
+      img.style.display = 'block';
       markDirty();
-      renderAssetsPanel();
-      showToast('已恢復創辦人 R2 官方預設照片！請點擊「一鍵發佈」保存', 'success');
+      showToast('已恢復官方 R2 預設頭像', 'info');
     }
 
     function handleAssetUrlChange(key, value) {
       if (!currentContent.assets) currentContent.assets = {};
-      const trimmed = value.trim();
-      currentContent.assets[key] = trimmed;
-      if (key === 'founderImage') {
-        currentContent.assets.avatar = trimmed;
+      currentContent.assets[key] = value.trim();
+      if (key === 'logo') {
+        currentContent.siteInfo.logoUrl = value.trim();
+        const img = document.getElementById('preview-asset-logo');
+        if (img) img.src = value.trim();
+      } else if (key === 'founderImage') {
+        currentContent.assets.avatar = value.trim();
+        const img = document.getElementById('preview-asset-founder');
+        if (img) img.src = value.trim();
       }
       markDirty();
-      renderAssetsPanel();
     }
 
-    // Direct Binary Multipart Upload for Brand Assets
-    async function handleAssetUpload(event, key) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      showToast(`正在上傳 ${file.name} 至 Cloudflare R2...`, 'info');
-      try {
-        const result = await uploadImageFileToR2(file);
-        const finalUrl = result.url || result.rawUrl;
-
-        if (!currentContent.assets) currentContent.assets = {};
-        currentContent.assets[key] = finalUrl;
-        if (key === 'founderImage') {
-          currentContent.assets.avatar = finalUrl;
-        }
-        if (key === 'logo') {
-          if (!currentContent.site) currentContent.site = {};
-          currentContent.site.logoUrl = finalUrl;
-          if (!currentContent.siteInfo) currentContent.siteInfo = {};
-          currentContent.siteInfo.logoUrl = finalUrl;
-        }
-
-        markDirty();
-        renderAssetsPanel();
-        showToast('✨ 圖片已成功上傳至 Cloudflare R2！請點擊上方「一鍵發佈至 KV」保存', 'success');
-      } catch (err) {
-        showToast(`上傳失敗：${err.message}`, 'error');
-      } finally {
-        event.target.value = '';
-      }
-    }
-
-    /**
-     * 超強容錯 R2 圖片上傳引擎 (支援原生 FormData 直傳 + 自動 Base64 備援容錯)
-     */
-    async function uploadImageFileToR2(file) {
-      const apiBase = getApiBase();
-      const uploadUrl = apiBase ? `${apiBase}/api/upload` : '/api/upload';
-
-      if (file.size > 25 * 1024 * 1024) {
-        throw new Error('檔案大小超過 25MB 上限，請選擇較小的圖檔。');
-      }
-
-      // 1. 優先嘗試標準 FormData 二進制直傳 (最佳效能)
-      try {
-        const formData = new FormData();
-        formData.append('file', file, file.name);
-        formData.append('filename', file.name);
-
-        const headers = {
-          ...getAuthHeaders()
-        };
-        // 注意：切勿手動設定 Content-Type，讓瀏覽器自動附帶 boundary
-
-        const res = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: headers,
-          body: formData
-        });
-
-        const data = await res.json().catch(() => ({}));
-        if (res.ok && (data.url || data.rawUrl)) {
-          return data;
-        }
-
-        if (res.status === 401) {
-          throw new Error('管理員金鑰 (ADMIN_PASS) 驗證失敗，請檢查設定。');
-        }
-
-        if (!res.ok && data.error) {
-          throw new Error(data.error);
-        }
-      } catch (primaryErr) {
-        console.warn('[FormData Upload Failed, initiating Base64 Fallback]:', primaryErr);
-
-        // 若是 401 錯誤直接拋出，不重複嘗試
-        if (primaryErr.message.includes('ADMIN_PASS') || primaryErr.message.includes('401')) {
-          throw primaryErr;
-        }
-
-        // 2. 次要嘗試：將檔案轉換為 Base64 JSON 進行容錯直傳 (克服部分瀏覽器跨域 FormData 限制)
-        try {
-          const base64Data = await readFileAsBase64(file);
-          const fallbackRes = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...getAuthHeaders()
-            },
-            body: JSON.stringify({
-              filename: file.name,
-              base64: base64Data,
-              contentType: file.type || 'image/jpeg'
-            })
-          });
-
-          const fallbackData = await fallbackRes.json().catch(() => ({}));
-          if (fallbackRes.ok && (fallbackData.url || fallbackData.rawUrl)) {
-            return fallbackData;
-          }
-
-          throw new Error(fallbackData.error || `HTTP ${fallbackRes.status}`);
-        } catch (fallbackErr) {
-          console.error('[Base64 Fallback also failed]:', fallbackErr);
-          
-          let detailedMsg = fallbackErr.message;
-          if (detailedMsg.includes('Load failed') || detailedMsg.includes('Failed to fetch')) {
-            detailedMsg = `無法連線至 Worker (${uploadUrl})。請至右上角齒輪 ⚙️ 確認 Worker API 網址是否正確。`;
-          }
-          throw new Error(detailedMsg);
-        }
-      }
-    }
-
-    function readFileAsBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-      });
-    }
-
-    // ==========================================
-    // SITE INFO META
-    // ==========================================
-    function renderSiteInfoPanel() {
-      const info = currentContent.siteInfo || {};
-      document.getElementById('meta-title').value = info.title || '維度影學 Cine Dimension';
-      document.getElementById('meta-email').value = info.email || 'select03@gmail.com';
-      document.getElementById('meta-tagline').value = info.tagline || 'Have Fun 享受創作 ｜ 用手機拍出真實的電影感';
-      document.getElementById('meta-youtube').value = info.youtube || '@cinedimens';
-      document.getElementById('meta-facebook').value = info.facebook || '維度影學 Cine Dimension';
-      document.getElementById('meta-instagram').value = info.instagram || '';
-      document.getElementById('meta-line').value = info.line || '';
-    }
-
-    function handleSiteInfoChange(field, value) {
+    function handleSiteInfoChange(key, value) {
       if (!currentContent.siteInfo) currentContent.siteInfo = {};
-      currentContent.siteInfo[field] = value.trim();
+      currentContent.siteInfo[key] = value.trim();
       markDirty();
     }
 
-    // ==========================================
-    // LEADS & INQUIRIES
-    // ==========================================
+    // 查詢諮詢名單
     async function fetchLeadsList() {
-      const apiBase = getApiBase();
-      const leadsUrl = apiBase ? `${apiBase}/api/leads` : '/api/leads';
+      const tbody = document.getElementById('leads-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">正在讀取諮詢名單...</td></tr>';
 
       try {
-        const res = await fetch(leadsUrl, {
-          headers: getAuthHeaders()
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        renderLeadsTable(data.leads || []);
-      } catch (err) {
-        renderLeadsTable([]);
-      }
-    }
+        const response = await safeApiFetch('/api/leads');
+        const data = await response.json();
+        const leads = data.leads || [];
 
-    function renderLeadsTable(leads) {
-      const tbody = document.getElementById('leads-table-body');
-      if (!leads || leads.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="p-8 text-center text-slate-500">
-              尚無新的諮詢名單。當學員於前台提交表單時，名單將即時儲存於此並透過 Telegram 機器人推播。
-            </td>
+        if (leads.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">目前尚無預約諮詢紀錄</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = leads.map(lead => `
+          <tr class="hover:bg-slate-900/50 transition-colors">
+            <td class="p-3.5 whitespace-nowrap text-slate-400">${new Date(lead.timestamp || Date.now()).toLocaleString('zh-TW')}</td>
+            <td class="p-3.5 font-bold text-white">${escapeHtml(lead.name || '未填寫')}</td>
+            <td class="p-3.5 text-amber-400 font-mono">${escapeHtml(lead.phone || '無')}</td>
+            <td class="p-3.5 text-slate-300">${escapeHtml(lead.email || '無')}</td>
+            <td class="p-3.5"><span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">${escapeHtml(lead.service || '一般諮詢')}</span></td>
+            <td class="p-3.5 text-slate-400 max-w-xs truncate">${escapeHtml(lead.message || '無')}</td>
           </tr>
-        `;
-        return;
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-400">讀取失敗：${err.message}</td></tr>`;
       }
-
-      tbody.innerHTML = leads.map(l => `
-        <tr class="hover:bg-slate-900/40 transition-colors">
-          <td class="p-3.5 text-slate-400 whitespace-nowrap">${new Date(l.timestamp || l.date || Date.now()).toLocaleString('zh-TW')}</td>
-          <td class="p-3.5 font-bold text-white">${l.name || '未提供'}</td>
-          <td class="p-3.5 text-amber-400 font-mono">${l.phone || '無'}</td>
-          <td class="p-3.5 text-slate-300">${l.email || l.lineId || '無'}</td>
-          <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">${l.service || l.plan || '商業合作'}</span></td>
-          <td class="p-3.5 text-slate-400 max-w-xs truncate">${l.message || '無特殊需求'}</td>
-        </tr>
-      `).join('');
     }
 
-    // ==========================================
-    // UTILITY HELPERS
-    // ==========================================
-    function getYouTubeThumbnail(url) {
-      if (!url) return '';
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      if (match && match[2].length === 11) {
-        return `https://img.youtube.com/vi/${match[2]}/maxresdefault.jpg`;
+    // 分頁切換
+    function switchTab(tabId) {
+      const tabs = ['portfolio', 'assets', 'siteinfo', 'leads'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`tab-content-${t}`);
+        if (t === tabId) {
+          btn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/20 cursor-pointer';
+          content?.classList.remove('hidden');
+        } else {
+          btn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-slate-900 text-slate-400 border border-slate-800 hover:text-white cursor-pointer';
+          content?.classList.add('hidden');
+        }
+      });
+
+      if (tabId === 'leads') {
+        fetchLeadsList();
       }
-      return '';
     }
 
+    // 髒狀態標記
     function markDirty() {
       isDirty = true;
-      document.getElementById('dirty-badge').classList.remove('hidden');
+      document.getElementById('dirty-badge')?.classList.remove('hidden');
     }
 
-    function setClean() {
+    function clearDirty() {
       isDirty = false;
-      document.getElementById('dirty-badge').classList.add('hidden');
+      document.getElementById('dirty-badge')?.classList.add('hidden');
     }
 
-    function showToast(message, type = 'info') {
+    // 設定視窗 Modal
+    function openSettingsModal() {
+      document.getElementById('cfg-modal-worker-url').value = getApiBase();
+      document.getElementById('cfg-modal-admin-secret').value = getStoredPass();
+      document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    function resetToDefaultWorkerUrl() {
+      document.getElementById('cfg-modal-worker-url').value = DEFAULT_WORKER_URL;
+      document.getElementById('login-worker-url').value = DEFAULT_WORKER_URL;
+      setStoredWorkerUrl(DEFAULT_WORKER_URL);
+      showToast('已重設為官方 Cloudflare Worker 網址', 'info');
+    }
+
+    function saveSettingsFromModal() {
+      const url = document.getElementById('cfg-modal-worker-url').value.trim();
+      const secret = document.getElementById('cfg-modal-admin-secret').value.trim();
+
+      if (url) setStoredWorkerUrl(url);
+      if (secret) setStoredPass(secret);
+
+      updateHeaderApiIndicator();
+      closeSettingsModal();
+      showToast('已儲存 Worker API 與金鑰設定！', 'success');
+      testApiConnection(true);
+    }
+
+    function handleLoginSubmit() {
+      const url = document.getElementById('login-worker-url').value.trim();
+      const secret = document.getElementById('login-admin-secret').value.trim();
+
+      if (url) setStoredWorkerUrl(url);
+      if (secret) setStoredPass(secret);
+
+      showDashboard();
+      showToast('管理員驗證通過', 'success');
+      testApiConnection(true);
+    }
+
+    function enterDirectEditMode() {
+      setStoredPass('admin888');
+      showDashboard();
+      showToast('已進入後台管理系統', 'info');
+    }
+
+    function handleLogout() {
+      if (confirm('確定要登出並鎖定後台系統嗎？')) {
+        removeStoredPass();
+        location.reload();
+      }
+    }
+
+    // Toast 提示訊息元件
+    function showToast(msg, type = 'info') {
       const container = document.getElementById('toast-container');
+      if (!container) return;
+
       const toast = document.createElement('div');
-      
-      const bgColors = {
-        success: 'bg-emerald-950/95 border-emerald-700/80 text-emerald-200',
-        error: 'bg-rose-950/95 border-rose-700/80 text-rose-200',
-        info: 'bg-slate-900/95 border-slate-700 text-slate-200'
-      };
+      const colorClasses = type === 'success' ? 'border-emerald-500/30 bg-emerald-950/90 text-emerald-300' :
+                           type === 'error' ? 'border-rose-500/30 bg-rose-950/90 text-rose-300' :
+                           'border-amber-500/30 bg-slate-900/90 text-amber-300';
 
-      const icons = {
-        success: 'check-circle',
-        error: 'alert-triangle',
-        info: 'info'
-      };
-
-      toast.className = `p-3.5 rounded-xl border shadow-2xl text-xs flex items-start gap-2.5 backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+      toast.className = `p-3.5 rounded-xl border text-xs shadow-2xl backdrop-blur-md flex items-center gap-2 transform transition-all duration-300 opacity-0 translate-y-2 pointer-events-auto ${colorClasses}`;
       toast.innerHTML = `
-        <i data-lucide="${icons[type] || 'info'}" class="w-4 h-4 shrink-0 mt-0.5"></i>
-        <div class="flex-1 leading-relaxed">${message}</div>
+        <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : 'info'}" class="w-4 h-4 flex-shrink-0"></i>
+        <span class="flex-1">${escapeHtml(msg)}</span>
       `;
 
       container.appendChild(toast);
       lucide.createIcons();
 
       setTimeout(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
+        toast.classList.remove('opacity-0', 'translate-y-2');
       }, 10);
 
       setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 300);
-      }, 4500);
+      }, 4000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, function(m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        }[m];
+      });
     }
   </script>
 </body>

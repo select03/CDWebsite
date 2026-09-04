@@ -227,8 +227,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsSyncingRemote(true);
     setFetchError(null);
 
-    const workerUrl = (localStorage.getItem('cms_worker_url') || '').trim().replace(/\/+$/, '');
-    const token = (localStorage.getItem('cms_auth_token') || '').trim();
+    const workerUrl = (localStorage.getItem('cms_worker_url') || localStorage.getItem('cinedimension_worker_url') || 'https://cms-api.cine-dimension.com').trim().replace(/\/+$/, '');
+    const token = (localStorage.getItem('cms_auth_token') || localStorage.getItem('cinedimension_admin_pass') || '').trim();
 
     const timestamp = Date.now();
     const fetchSources: { name: string; url: string; headers?: Record<string, string> }[] = [];
@@ -268,7 +268,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             'Pragma': 'no-cache',
             ...(source.headers || {})
           },
-          cache: 'no-store'
+          cache: 'no-store',
+          credentials: 'omit',
+          mode: 'cors'
         });
         if (res.ok) {
           const json = await res.json();
