@@ -218,6 +218,12 @@ app.get("/api/leads", (_req, res) => {
   });
 });
 
+// GET /admin & /admin.html (Direct Admin CMS Route)
+app.get(["/admin", "/admin/", "/admin.html"], (_req, res) => {
+  const adminPath = path.join(process.cwd(), process.env.NODE_ENV === "production" ? "dist/admin.html" : "public/admin.html");
+  res.sendFile(adminPath);
+});
+
 // POST /api/contact or /api/submit-form
 app.post(["/api/submit-form", "/api/contact"], async (req, res) => {
   try {
