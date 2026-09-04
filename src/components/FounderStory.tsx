@@ -54,11 +54,11 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
         {/* Brand Logo & Philosophy Banner */}
         <div className="mb-10 p-6 sm:p-8 rounded-2xl bg-[#EFECE6] border border-stone-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#F6F4EE] border border-stone-300 p-2 shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl bg-[#F6F4EE] border border-stone-300 p-3 shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
               <img
                 src={assets.logo || STATIC_ASSETS.LOGO}
                 alt="維度影學 Brand Emblem Logo"
-                className="w-full h-full object-contain drop-shadow-sm p-0.5"
+                className="w-full h-full object-contain drop-shadow-sm scale-110"
                 onError={(e) => {
                   const target = e.currentTarget;
                   if (!target.src.includes('Logo.svg') && !target.src.includes('logo.svg')) {
@@ -70,16 +70,21 @@ export const FounderStory: React.FC<FounderStoryProps> = ({ onNavigate, onOpenCo
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-                <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 tracking-wider">
-                  維度影學 ｜ CINE DIMENSION
-                </h2>
-                <span className="text-xs font-sans px-2.5 py-0.5 rounded-full bg-stone-200 text-stone-800 border border-stone-300 font-semibold">
+            <div className="space-y-2 text-center md:text-left">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-wider leading-tight">
+                    維度影學
+                  </h2>
+                  <p className="text-sm sm:text-base font-sans font-bold tracking-[0.22em] text-stone-800 uppercase mt-0.5">
+                    CINE DIMENSION
+                  </p>
+                </div>
+                <span className="text-xs font-sans px-2.5 py-0.5 rounded-full bg-stone-200 text-stone-800 border border-stone-300 font-semibold self-center md:self-start mt-1">
                   Brand Emblem
                 </span>
               </div>
-              <p className="text-xs sm:text-sm font-sans font-semibold text-amber-900 tracking-wide">
+              <p className="text-xs sm:text-sm font-sans font-semibold text-amber-900 tracking-wide pt-1">
                 Have Fun 享受創作 ｜ 用手機拍出真實的電影感
               </p>
               <p className="text-xs sm:text-sm text-stone-600 max-w-xl leading-relaxed">
