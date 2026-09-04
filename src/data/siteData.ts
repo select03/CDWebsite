@@ -388,7 +388,7 @@ export const PORTFOLIO_CASES: PortfolioItem[] = [
     category: '音樂錄影帶 MV / 電影感敘事',
     clientOrProject: '不寂寞樂團 x 阿京',
     year: '2018',
-    description: '一手包辦現場攝影、氛圍燈光與剪輯後製，運用極致的情緒光影與強烈節奏感剪輯，完美詮釋歌曲的情感沉澱與故事張力。',
+    description: '現場攝影、氛圍燈光與剪輯後製，運用極致的情緒光影與強烈節奏感剪輯，完美詮釋歌曲的情感沉澱與故事張力',
     role: '導演 / 攝影師 / 剪輯師',
     tags: ['音樂MV', '情緒調色', '節奏剪輯', '電影感視覺'],
     image: 'https://img.youtube.com/vi/5p7nMVHx-AE/hqdefault.jpg',

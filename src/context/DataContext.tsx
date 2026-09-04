@@ -34,12 +34,12 @@ export interface DataContextType {
 }
 
 const STORAGE_KEYS = {
-  ASSETS: 'cine_dimension_assets_v17',
-  SITE_INFO: 'cine_dimension_siteinfo_v17',
-  FOUNDER: 'cine_dimension_founder_v17',
-  SERVICES: 'cine_dimension_services_v17',
-  PORTFOLIO: 'cine_dimension_portfolio_v17',
-  TESTIMONIALS: 'cine_dimension_testimonials_v17',
+  ASSETS: 'cine_dimension_assets_v18',
+  SITE_INFO: 'cine_dimension_siteinfo_v18',
+  FOUNDER: 'cine_dimension_founder_v18',
+  SERVICES: 'cine_dimension_services_v18',
+  PORTFOLIO: 'cine_dimension_portfolio_v18',
+  TESTIMONIALS: 'cine_dimension_testimonials_v18',
   LEADS: 'cinedimension_inquiries'
 };
 
@@ -233,16 +233,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const timestamp = Date.now();
     const fetchSources: { name: string; url: string; headers?: Record<string, string> }[] = [];
 
-    // 1. Cloudflare Worker API (KV Engine - Primary Source)
-    if (workerUrl) {
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    // 1. Cloudflare Worker API (KV Engine - Direct Public Read)
+    fetchSources.push({
+      name: 'Cloudflare Worker KV API (Direct)',
+      url: `https://cms-api.cine-dimension.com/api/content?_t=${timestamp}`
+    });
+
+    if (workerUrl && workerUrl !== 'https://cms-api.cine-dimension.com') {
       fetchSources.push({
-        name: 'Cloudflare Worker KV API',
-        url: `${workerUrl}/api/content?_t=${timestamp}`,
-        headers
+        name: 'Custom Worker KV API',
+        url: `${workerUrl}/api/content?_t=${timestamp}`
       });
     }
 

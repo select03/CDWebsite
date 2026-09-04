@@ -64,7 +64,7 @@ const DEFAULT_INITIAL_PORTFOLIO = [
     category: "音樂錄影帶 MV / 電影感敘事",
     clientOrProject: "不寂寞樂團 x 阿京",
     year: "2018",
-    description: "一手包辦現場攝影、氛圍燈光與剪輯後製，運用極致的情緒光影與強烈節奏感剪輯，完美詮釋歌曲的情感沉澱與故事張力。",
+    description: "現場攝影、氛圍燈光與剪輯後製，運用極致的情緒光影與強烈節奏感剪輯，完美詮釋歌曲的情感沉澱與故事張力",
     role: "導演 / 攝影師 / 剪輯師",
     tags: ["音樂MV", "情緒調色", "節奏剪輯", "電影感視覺"],
     image: "https://img.youtube.com/vi/5p7nMVHx-AE/maxresdefault.jpg",
@@ -152,8 +152,31 @@ app.post("/api/verify", (_req, res) => {
 });
 
 // GET /api/content (KV Proxy & Local Cache)
-app.get(["/api/content", "/api/remote-content"], (_req, res) => {
+app.get(["/api/content", "/api/remote-content"], async (_req, res) => {
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const remoteRes = await fetch(`https://cms-api.cine-dimension.com/api/content?_t=${Date.now()}`, {
+      signal: controller.signal,
+      headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+    });
+    clearTimeout(timeoutId);
+    if (remoteRes.ok) {
+      const data: any = await remoteRes.json();
+      if (data?.content && (data.content.portfolio || data.content.siteInfo || data.content.assets)) {
+        inMemoryContentCache = data.content;
+        return res.json({
+          success: true,
+          content: inMemoryContentCache,
+          source: "cloudflare-kv-proxied"
+        });
+      }
+    }
+  } catch (e) {
+    // Fall back to memory cache
+  }
+
   res.json({
     success: true,
     content: inMemoryContentCache,

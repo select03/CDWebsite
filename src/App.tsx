@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { PageView } from './types';
+import { PageView, PortfolioItem } from './types';
 import { DataProvider, useData } from './context/DataContext';
+import { PORTFOLIO_CASES } from './data/siteData';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { PhilosophySection } from './components/PhilosophySection';
@@ -19,6 +20,46 @@ function MainAppContent() {
   const [isTrailerOpen, setIsTrailerOpen] = useState<boolean>(false);
   const [preselectedService, setPreselectedService] = useState<string>('');
   const { isSyncingRemote } = useData();
+
+  // 1. Dynamic state for works/portfolio list
+  const [worksList, setWorksList] = useState<PortfolioItem[]>(PORTFOLIO_CASES);
+
+  // 2. Fetch live dynamic content from Cloudflare KV API (no-store to prevent caching)
+  useEffect(() => {
+    async function loadDynamicContent() {
+      try {
+        const res = await fetch(`https://cms-api.cine-dimension.com/api/content?_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const incomingPortfolio = data?.content?.portfolio || data?.portfolio;
+        if (incomingPortfolio && Array.isArray(incomingPortfolio) && incomingPortfolio.length > 0) {
+          setWorksList(incomingPortfolio);
+        }
+      } catch (e) {
+        console.warn('動態載入作品失敗，使用預設值', e);
+      }
+    }
+
+    loadDynamicContent();
+
+    // Listen to admin CMS update events
+    const handleUpdate = () => {
+      loadDynamicContent();
+    };
+    window.addEventListener('cinedimension_content_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('cinedimension_content_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   // Support accessing CMS via secret URL hash (e.g. your-site.com/#admin or /#cms)
   useEffect(() => {
@@ -78,6 +119,7 @@ function MainAppContent() {
         <main>
           {/* 1. 代表作展覽 (Exhibition Timeline, sorted by year) */}
           <Hero
+            works={worksList}
             onNavigate={handleNavigate}
             onPlayTrailer={() => setIsTrailerOpen(true)}
           />
@@ -122,7 +164,7 @@ function MainAppContent() {
 
       {currentView === 'portfolio' && (
         <main>
-          <PortfolioShowcase />
+          <PortfolioShowcase works={worksList} />
           <Testimonials />
           <ContactSection
             preselectedService={preselectedService}

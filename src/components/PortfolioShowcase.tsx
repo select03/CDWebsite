@@ -5,16 +5,23 @@ import { STATIC_ASSETS } from '../constants/assets';
 import { Play, Check, X, ExternalLink, Video, Eye, Image as ImageIcon } from 'lucide-react';
 import { getYouTubeThumbnailUrl, getYouTubeEmbedUrl } from '../utils/youtube';
 
-export const PortfolioShowcase: React.FC = () => {
+interface PortfolioShowcaseProps {
+  works?: PortfolioItem[];
+}
+
+export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({ works }) => {
   const { portfolio } = useSiteData();
   const [selectedCase, setSelectedCase] = useState<PortfolioItem | null>(null);
+
+  // Active works list prioritizing passed props, then dynamic data, then fallback
+  const activePortfolio = (works && Array.isArray(works) && works.length > 0) ? works : portfolio;
 
   const sortedPortfolio = React.useMemo(() => {
     // Safety deduplication by id and title
     const seen = new Set<string>();
     const uniqueItems: PortfolioItem[] = [];
 
-    for (const item of portfolio) {
+    for (const item of activePortfolio) {
       if (!item) continue;
       const key = (item.id || item.title || '').trim().toLowerCase();
       if (!seen.has(key)) {
@@ -31,7 +38,7 @@ export const PortfolioShowcase: React.FC = () => {
       };
       return getYear(b.year) - getYear(a.year);
     });
-  }, [portfolio]);
+  }, [activePortfolio]);
 
   return (
     <section className="py-20 bg-[#F6F4EE] text-stone-900 font-serif border-t border-stone-300 relative">
