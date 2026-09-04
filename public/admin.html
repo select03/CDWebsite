@@ -316,7 +316,8 @@
                 <label class="block text-xs font-medium text-slate-300">Logo 網址 (R2 CDN 或公開連結)</label>
                 <input 
                   type="url" 
-                  id="input-asset-logo" 
+                  id="logoUrlInput" 
+                  data-alt-id="input-asset-logo"
                   placeholder="https://assets.cine-dimension.com/Logo.svg"
                   onchange="handleAssetUrlChange('logo', this.value)"
                   class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
@@ -364,7 +365,8 @@
                 <label class="block text-xs font-medium text-slate-300">頭像網址 (R2 CDN 或公開連結)</label>
                 <input 
                   type="url" 
-                  id="input-asset-founder" 
+                  id="avatarUrlInput" 
+                  data-alt-id="input-asset-founder"
                   placeholder="https://assets.cine-dimension.com/avatar.JPG"
                   onchange="handleAssetUrlChange('founderImage', this.value)"
                   class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
@@ -861,8 +863,12 @@
 
       let body = options.body;
 
-      // 若 body 為一般物件且非 FormData，自動序列化並設置 Content-Type
-      if (body && typeof body === 'object' && !(body instanceof FormData)) {
+      // 若 body 為一般物件或字串，自動設置 Content-Type 為 application/json
+      if (typeof body === 'string') {
+        if (!headers.has('Content-Type')) {
+          headers.set('Content-Type', 'application/json');
+        }
+      } else if (body && typeof body === 'object' && !(body instanceof FormData)) {
         if (!headers.has('Content-Type')) {
           headers.set('Content-Type', 'application/json');
         }
@@ -1006,6 +1012,16 @@
       },
       portfolio: JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO))
     };
+    // 支援最新規範之全域別名物件
+    let currentSiteData = currentContent;
+    let currentPortfolioList = currentContent.portfolio;
+
+    function syncGlobalState() {
+      currentSiteData = currentContent;
+      if (Array.isArray(currentContent.portfolio)) {
+        currentPortfolioList = currentContent.portfolio;
+      }
+    }
     let isDirty = false;
 
     // 初始化流程
@@ -1194,22 +1210,55 @@
       if (labelTextEl) labelTextEl.innerText = '正在直傳至 R2...';
 
       try {
-        const cdnUrl = await uploadToR2(file);
+        const uploadedUrl = await uploadToR2(file);
 
         if (isLogo) {
-          currentContent.assets.logo = cdnUrl;
-          if (currentContent.siteInfo) currentContent.siteInfo.logoUrl = cdnUrl;
-          document.getElementById('input-asset-logo').value = cdnUrl;
-          document.getElementById('preview-asset-logo').src = cdnUrl;
-          document.getElementById('preview-asset-logo').style.display = 'block';
-          document.getElementById('empty-asset-logo').classList.add('hidden');
+          // 上傳完成回調：
+          const logoInput = document.getElementById('logoUrlInput') || document.getElementById('input-asset-logo');
+          if (logoInput) {
+            logoInput.value = uploadedUrl;
+          }
+          // 同步更新全域資料狀態
+          currentSiteData.siteInfo = currentSiteData.siteInfo || {};
+          currentSiteData.siteInfo.logoUrl = uploadedUrl;
+          currentSiteData.site = currentSiteData.site || {};
+          currentSiteData.site.logoUrl = uploadedUrl;
+          currentSiteData.assets = currentSiteData.assets || {};
+          currentSiteData.assets.logo = uploadedUrl;
+
+          currentContent.siteInfo = currentSiteData.siteInfo;
+          currentContent.site = currentSiteData.site;
+          currentContent.assets = currentSiteData.assets;
+
+          const previewLogo = document.getElementById('preview-asset-logo');
+          if (previewLogo) {
+            previewLogo.src = uploadedUrl;
+            previewLogo.style.display = 'block';
+          }
+          document.getElementById('empty-asset-logo')?.classList.add('hidden');
         } else {
-          currentContent.assets.founderImage = cdnUrl;
-          currentContent.assets.avatar = cdnUrl;
-          document.getElementById('input-asset-founder').value = cdnUrl;
-          document.getElementById('preview-asset-founder').src = cdnUrl;
-          document.getElementById('preview-asset-founder').style.display = 'block';
-          document.getElementById('empty-asset-founder').classList.add('hidden');
+          // 頭像上傳完成回調：
+          const avatarInput = document.getElementById('avatarUrlInput') || document.getElementById('input-asset-founder');
+          if (avatarInput) {
+            avatarInput.value = uploadedUrl;
+          }
+          // 同步更新全域資料狀態
+          currentSiteData.siteInfo = currentSiteData.siteInfo || {};
+          currentSiteData.siteInfo.avatar = uploadedUrl;
+          currentSiteData.siteInfo.founderImage = uploadedUrl;
+          currentSiteData.assets = currentSiteData.assets || {};
+          currentSiteData.assets.founderImage = uploadedUrl;
+          currentSiteData.assets.avatar = uploadedUrl;
+
+          currentContent.siteInfo = currentSiteData.siteInfo;
+          currentContent.assets = currentSiteData.assets;
+
+          const previewFounder = document.getElementById('preview-asset-founder');
+          if (previewFounder) {
+            previewFounder.src = uploadedUrl;
+            previewFounder.style.display = 'block';
+          }
+          document.getElementById('empty-asset-founder')?.classList.add('hidden');
         }
 
         markDirty(true);
@@ -1229,49 +1278,133 @@
      * =========================================================================
      */
     async function publishToKV() {
+      const token = localStorage.getItem('cinedimension_admin_pass') || getStoredPass();
+      if (!token) {
+        alert('請先於 API 設定填寫管理員金鑰');
+        return;
+      }
+
+      // 0. 若作品編輯彈窗開啟中且有輸入名稱，自動提交暫存以防止用戶直接點發布導致最新編輯流失
+      const modalEl = document.getElementById('portfolio-modal');
+      if (modalEl && !modalEl.classList.contains('hidden')) {
+        const modalTitle = document.getElementById('modal-input-title')?.value.trim();
+        if (modalTitle) {
+          savePortfolioModalItem();
+        }
+      }
+
+      // 1. 動態收集畫面上的最新設定
+      const latestLogo = document.getElementById('logoUrlInput')?.value.trim() 
+        || document.getElementById('input-asset-logo')?.value.trim() 
+        || currentSiteData.siteInfo?.logoUrl 
+        || currentSiteData.site?.logoUrl 
+        || currentSiteData.assets?.logo 
+        || 'https://assets.cine-dimension.com/Logo.svg';
+
+      const latestAvatar = document.getElementById('avatarUrlInput')?.value.trim() 
+        || document.getElementById('input-asset-founder')?.value.trim() 
+        || currentSiteData.siteInfo?.avatar 
+        || currentSiteData.assets?.founderImage 
+        || 'https://assets.cine-dimension.com/avatar.JPG';
+
+      // 動態收集社群與站台文字設定
+      const latestTitle = document.getElementById('meta-title')?.value.trim() || currentSiteData.siteInfo?.title || '維度影學 Cine Dimension';
+      const latestTagline = document.getElementById('meta-tagline')?.value.trim() || currentSiteData.siteInfo?.tagline || 'Have Fun 享受創作 ｜ 用手機拍出真實的電影感';
+      const latestEmail = document.getElementById('meta-email')?.value.trim() || currentSiteData.siteInfo?.email || 'select03@gmail.com';
+      const latestYoutube = document.getElementById('meta-youtube')?.value.trim() || currentSiteData.siteInfo?.youtube || '@cinedimens';
+      const latestFacebook = document.getElementById('meta-facebook')?.value.trim() || currentSiteData.siteInfo?.facebook || '維度影學 Cine Dimension';
+      const latestInstagram = document.getElementById('meta-instagram')?.value.trim() || currentSiteData.siteInfo?.instagram || '';
+      const latestLine = document.getElementById('meta-line')?.value.trim() || currentSiteData.siteInfo?.line || '';
+
+      // 同步全域物件
+      currentSiteData.siteInfo = {
+        ...currentSiteData.siteInfo,
+        title: latestTitle,
+        tagline: latestTagline,
+        email: latestEmail,
+        youtube: latestYoutube,
+        facebook: latestFacebook,
+        instagram: latestInstagram,
+        line: latestLine,
+        logoUrl: latestLogo,
+        avatar: latestAvatar
+      };
+
+      currentSiteData.site = {
+        ...(currentSiteData.site || {}),
+        title: latestTitle,
+        logoUrl: latestLogo
+      };
+
+      currentSiteData.assets = {
+        ...(currentSiteData.assets || {}),
+        logo: latestLogo,
+        founderImage: latestAvatar,
+        avatar: latestAvatar
+      };
+
+      // 確保當前作品集列表與 currentPortfolioList 完全對齊
+      if (!Array.isArray(currentPortfolioList) || currentPortfolioList.length === 0) {
+        currentPortfolioList = currentContent.portfolio || [];
+      }
+      currentSiteData.portfolio = currentPortfolioList;
+      currentContent = currentSiteData;
+
+      const payload = {
+        ...currentSiteData,
+        siteInfo: {
+          ...currentSiteData.siteInfo,
+          logoUrl: latestLogo,
+          avatar: latestAvatar
+        },
+        site: {
+          ...(currentSiteData.site || {}),
+          logoUrl: latestLogo
+        },
+        assets: {
+          ...(currentSiteData.assets || {}),
+          logo: latestLogo,
+          founderImage: latestAvatar,
+          avatar: latestAvatar
+        },
+        // 確保當前編輯過的作品集 (包含標籤、年份) 完整覆蓋
+        portfolio: currentPortfolioList,
+        updatedAt: new Date().toISOString()
+      };
+
       const btn = document.getElementById('btn-publish-all');
-      const origHtml = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>正在發佈至 KV...</span>`;
-      lucide.createIcons();
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>正在發佈至 KV...</span>`;
+        if (window.lucide) lucide.createIcons();
+      }
+
+      showToast('正在發布至 Cloudflare KV...', 'info');
 
       try {
-        // 確保 Logo 與基本資料齊全
-        if (!currentContent.assets) currentContent.assets = {};
-        if (!currentContent.assets.logo) currentContent.assets.logo = 'https://assets.cine-dimension.com/Logo.svg';
-
-        const payload = {
-          content: currentContent,
-          timestamp: new Date().toISOString()
-        };
-
-        const response = await safeApiFetch('/api/save', {
+        const res = await safeApiFetch('/api/save', {
           method: 'POST',
-          body: payload
+          body: JSON.stringify({ content: payload })
         });
 
-        if (!response.ok) {
-          let msg = `發佈失敗 (${response.status})`;
-          try {
-            const data = await response.json();
-            if (data.error) msg = data.error;
-          } catch (_) {}
-          throw new Error(msg);
+        const data = await res.json();
+        if (res.ok && (data.success || data.message)) {
+          markDirty(false);
+          showToast('🎉 發布成功！官網內容已即時更新', 'success');
+          testApiConnection(true);
+        } else {
+          throw new Error(data.error || '發布失敗');
         }
-
-        const data = await response.json();
-        markDirty(false);
-        showToast(data.message || '🎉 網站內容與作品集已成功發布至 Cloudflare KV！', 'success');
-
-        // 同步通知快顯與前台快取刷新
-        testApiConnection(true);
       } catch (err) {
         console.error('[Publish Error]:', err);
-        showToast(err.message || '發佈至 KV 時發生錯誤', 'error');
+        showToast('發布失敗: ' + err.message, 'error');
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = origHtml;
-        lucide.createIcons();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+          if (window.lucide) lucide.createIcons();
+        }
       }
     }
 
@@ -1286,11 +1419,13 @@
           if (res.content) {
             currentContent = {
               siteInfo: { ...currentContent.siteInfo, ...(res.content.siteInfo || {}) },
+              site: { ...(res.content.site || {}) },
               assets: { ...currentContent.assets, ...(res.content.assets || {}) },
               portfolio: Array.isArray(res.content.portfolio) && res.content.portfolio.length > 0 
                          ? res.content.portfolio 
                          : JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO))
             };
+            syncGlobalState();
           }
         }
       } catch (err) {
@@ -1440,10 +1575,10 @@
      * 品牌資產頁籤渲染
      */
     function renderAssetsTab() {
-      const logoUrl = currentContent.assets?.logo || 'https://assets.cine-dimension.com/Logo.svg';
-      const founderUrl = currentContent.assets?.founderImage || currentContent.assets?.avatar || 'https://assets.cine-dimension.com/avatar.JPG';
+      const logoUrl = currentContent.assets?.logo || currentContent.siteInfo?.logoUrl || 'https://assets.cine-dimension.com/Logo.svg';
+      const founderUrl = currentContent.assets?.founderImage || currentContent.assets?.avatar || currentContent.siteInfo?.avatar || 'https://assets.cine-dimension.com/avatar.JPG';
 
-      const inputLogo = document.getElementById('input-asset-logo');
+      const inputLogo = document.getElementById('logoUrlInput') || document.getElementById('input-asset-logo');
       const previewLogo = document.getElementById('preview-asset-logo');
       if (inputLogo) inputLogo.value = logoUrl;
       if (previewLogo) {
@@ -1451,7 +1586,7 @@
         previewLogo.style.display = 'block';
       }
 
-      const inputFounder = document.getElementById('input-asset-founder');
+      const inputFounder = document.getElementById('avatarUrlInput') || document.getElementById('input-asset-founder');
       const previewFounder = document.getElementById('preview-asset-founder');
       if (inputFounder) inputFounder.value = founderUrl;
       if (previewFounder) {
@@ -1803,9 +1938,20 @@
     function resetToDefaultLogo() {
       const defaultLogo = 'https://assets.cine-dimension.com/Logo.svg';
       currentContent.assets.logo = defaultLogo;
-      if (currentContent.siteInfo) currentContent.siteInfo.logoUrl = defaultLogo;
-      document.getElementById('input-asset-logo').value = defaultLogo;
-      document.getElementById('preview-asset-logo').src = defaultLogo;
+      if (!currentContent.siteInfo) currentContent.siteInfo = {};
+      currentContent.siteInfo.logoUrl = defaultLogo;
+      if (!currentContent.site) currentContent.site = {};
+      currentContent.site.logoUrl = defaultLogo;
+
+      const input = document.getElementById('logoUrlInput') || document.getElementById('input-asset-logo');
+      if (input) input.value = defaultLogo;
+      const preview = document.getElementById('preview-asset-logo');
+      if (preview) {
+        preview.src = defaultLogo;
+        preview.style.display = 'block';
+      }
+      document.getElementById('empty-asset-logo')?.classList.add('hidden');
+      syncGlobalState();
       markDirty(true);
       showToast('已重設為官方 Logo 網址，請記得發佈生效', 'info');
     }
@@ -1814,8 +1960,19 @@
       const defaultAvatar = 'https://assets.cine-dimension.com/avatar.JPG';
       currentContent.assets.founderImage = defaultAvatar;
       currentContent.assets.avatar = defaultAvatar;
-      document.getElementById('input-asset-founder').value = defaultAvatar;
-      document.getElementById('preview-asset-founder').src = defaultAvatar;
+      if (!currentContent.siteInfo) currentContent.siteInfo = {};
+      currentContent.siteInfo.avatar = defaultAvatar;
+      currentContent.siteInfo.founderImage = defaultAvatar;
+
+      const input = document.getElementById('avatarUrlInput') || document.getElementById('input-asset-founder');
+      if (input) input.value = defaultAvatar;
+      const preview = document.getElementById('preview-asset-founder');
+      if (preview) {
+        preview.src = defaultAvatar;
+        preview.style.display = 'block';
+      }
+      document.getElementById('empty-asset-founder')?.classList.add('hidden');
+      syncGlobalState();
       markDirty(true);
       showToast('已重設為官方頭像網址，請記得發佈生效', 'info');
     }
@@ -1823,9 +1980,31 @@
     function handleAssetUrlChange(key, val) {
       if (!currentContent.assets) currentContent.assets = {};
       currentContent.assets[key] = val.trim();
-      if (key === 'logo' && currentContent.siteInfo) {
+      if (key === 'logo') {
+        if (!currentContent.siteInfo) currentContent.siteInfo = {};
         currentContent.siteInfo.logoUrl = val.trim();
+        if (!currentContent.site) currentContent.site = {};
+        currentContent.site.logoUrl = val.trim();
+        const preview = document.getElementById('preview-asset-logo');
+        if (preview && val.trim()) {
+          preview.src = val.trim();
+          preview.style.display = 'block';
+          document.getElementById('empty-asset-logo')?.classList.add('hidden');
+        }
+      } else if (key === 'founderImage' || key === 'avatar') {
+        if (!currentContent.siteInfo) currentContent.siteInfo = {};
+        currentContent.siteInfo.avatar = val.trim();
+        currentContent.siteInfo.founderImage = val.trim();
+        currentContent.assets.founderImage = val.trim();
+        currentContent.assets.avatar = val.trim();
+        const preview = document.getElementById('preview-asset-founder');
+        if (preview && val.trim()) {
+          preview.src = val.trim();
+          preview.style.display = 'block';
+          document.getElementById('empty-asset-founder')?.classList.add('hidden');
+        }
       }
+      syncGlobalState();
       markDirty(true);
     }
 

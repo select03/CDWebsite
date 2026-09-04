@@ -308,15 +308,25 @@ export default {
           return jsonResponse({ success: false, error: "缺少有效的內容結構 (content)" }, 400);
         }
 
-        // 確保 Logo 連結有效且維持官方 R2 網址
+        // 確保 Logo 連結正確保存上傳後的真實路徑（優先採用 siteInfo.logoUrl / site.logoUrl / assets.logo）
+        const rawLogo = (contentToSave.siteInfo?.logoUrl || contentToSave.site?.logoUrl || contentToSave.assets?.logo || "").trim();
+        const finalLogo = (rawLogo && !rawLogo.includes("/images/logo.svg")) 
+          ? rawLogo 
+          : "https://assets.cine-dimension.com/Logo.svg";
+
         if (!contentToSave.assets) contentToSave.assets = {};
-        if (!contentToSave.assets.logo || !contentToSave.assets.logo.trim() || contentToSave.assets.logo.includes("/images/logo.svg")) {
-          contentToSave.assets.logo = "https://assets.cine-dimension.com/Logo.svg";
-        }
+        contentToSave.assets.logo = finalLogo;
         if (!contentToSave.site) contentToSave.site = {};
-        contentToSave.site.logoUrl = contentToSave.assets.logo;
-        if (contentToSave.siteInfo) {
-          contentToSave.siteInfo.logoUrl = contentToSave.assets.logo;
+        contentToSave.site.logoUrl = finalLogo;
+        if (!contentToSave.siteInfo) contentToSave.siteInfo = {};
+        contentToSave.siteInfo.logoUrl = finalLogo;
+
+        // 確保 Avatar 創辦人頭像連結正確同步
+        const rawAvatar = (contentToSave.siteInfo?.avatar || contentToSave.assets?.founderImage || contentToSave.assets?.avatar || "").trim();
+        if (rawAvatar) {
+          contentToSave.assets.founderImage = rawAvatar;
+          contentToSave.assets.avatar = rawAvatar;
+          contentToSave.siteInfo.avatar = rawAvatar;
         }
 
         await env.SITE_KV.put("site_content", JSON.stringify(contentToSave));
