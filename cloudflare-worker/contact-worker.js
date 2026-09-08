@@ -274,7 +274,8 @@ export default {
           content,
           source: env.SITE_KV ? "cloudflare-kv" : "default-memory"
         }, 200, {
-          "Cache-Control": "public, max-age=0, s-maxage=10, must-revalidate"
+          // 快取 60 秒，過期自動向 KV 驗證更新
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300"
         });
       }
 

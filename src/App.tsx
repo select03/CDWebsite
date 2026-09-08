@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PageView, PortfolioItem } from './types';
 import { DataProvider, useData } from './context/DataContext';
 import { PORTFOLIO_CASES } from './data/siteData';
@@ -15,7 +15,42 @@ import { VideoTrailerModal } from './components/VideoTrailerModal';
 import { HomeQuickPortals } from './components/HomeQuickPortals';
 import { AdminCMS } from './components/AdminCMS';
 
-const API_URL = 'https://cms-api.cine-dimension.com/api/content';
+const API_CONTENT_URL = 'https://cms-api.cine-dimension.com/api/content';
+
+/**
+ * 嚴格防重入、單次加載之全站動態內容 Hook
+ * 1. 依賴項陣列嚴格為空 []，確保「只在元件初次掛載 (Mount) 時執行一次」
+ * 2. 加入 useRef 防重入鎖定，杜絕 React 18/19 StrictMode 下重複觸發
+ * 3. 移除 timestamp 參數與 no-store，允許 Cloudflare CDN 邊緣快取 60 秒
+ */
+export function useSiteContent(defaultData: any) {
+  const [content, setContent] = useState(defaultData);
+  const isFetchedRef = useRef(false); // 鎖定標記
+
+  useEffect(() => {
+    if (isFetchedRef.current) return; // 已經抓過就不再重複抓取
+    isFetchedRef.current = true;
+
+    async function loadOnce() {
+      try {
+        const res = await fetch(API_CONTENT_URL, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.content) {
+          setContent(data.content);
+        }
+      } catch (err) {
+        console.warn('載入動態資料失敗，維持本地資料:', err);
+      }
+    }
+
+    loadOnce();
+  }, []); // 關鍵：嚴格保持空陣列，禁止放入 content 或 works
+
+  return content;
+}
 
 function MainAppContent() {
   const [currentView, setCurrentView] = useState<PageView>('home');
@@ -23,56 +58,31 @@ function MainAppContent() {
   const [preselectedService, setPreselectedService] = useState<string>('');
   const { isSyncingRemote, updateSiteInfo, updateAssets } = useData();
 
-  // 1. Dynamic state for works/portfolio list and siteInfo
-  const [works, setWorks] = useState<PortfolioItem[]>(PORTFOLIO_CASES);
-  const [, setSiteInfo] = useState<any>(null);
+  // 1. 使用嚴格防護的 Hook 載入動態資料（單次加載 + useRef 鎖定）
+  const remoteContent = useSiteContent(null);
 
-  // 2. Fetch live dynamic content from Cloudflare KV API (no-store to prevent caching)
+  // 2. 本地狀態管理作品集
+  const [works, setWorks] = useState<PortfolioItem[]>(PORTFOLIO_CASES);
+
+  // 3. 當遠端資料抵達時僅同步一次至 Context 與視圖，嚴格防止重複執行
+  const isContentAppliedRef = useRef(false);
   useEffect(() => {
-    async function fetchLiveContent() {
-      try {
-        const res = await fetch(`${API_URL}?_t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (json && json.content) {
-          // 更新作品集
-          if (json.content.portfolio && Array.isArray(json.content.portfolio) && json.content.portfolio.length > 0) {
-            setWorks(json.content.portfolio);
-          }
-          // 更新全站品牌設定與 Logo
-          if (json.content.siteInfo) {
-            setSiteInfo(json.content.siteInfo);
-            updateSiteInfo(json.content.siteInfo);
-            if (json.content.siteInfo.logoUrl) {
-              updateAssets({ logo: json.content.siteInfo.logoUrl });
-            }
-          }
-          if (json.content.assets) {
-            updateAssets(json.content.assets);
-          }
-        }
-      } catch (e) {
-        console.warn('載入動態內容失敗，使用預設值', e);
+    if (!remoteContent || isContentAppliedRef.current) return;
+    isContentAppliedRef.current = true;
+
+    if (remoteContent.portfolio && Array.isArray(remoteContent.portfolio) && remoteContent.portfolio.length > 0) {
+      setWorks(remoteContent.portfolio);
+    }
+    if (remoteContent.siteInfo) {
+      updateSiteInfo(remoteContent.siteInfo);
+      if (remoteContent.siteInfo.logoUrl) {
+        updateAssets({ logo: remoteContent.siteInfo.logoUrl });
       }
     }
-
-    fetchLiveContent();
-
-    // Listen to admin CMS update events
-    const handleUpdate = () => {
-      fetchLiveContent();
-    };
-    window.addEventListener('cinedimension_content_updated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-
-    return () => {
-      window.removeEventListener('cinedimension_content_updated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-    };
-  }, [updateSiteInfo, updateAssets]);
+    if (remoteContent.assets) {
+      updateAssets(remoteContent.assets);
+    }
+  }, [remoteContent, updateSiteInfo, updateAssets]);
 
   // Support accessing CMS via secret URL hash (e.g. your-site.com/#admin or /#cms)
   useEffect(() => {

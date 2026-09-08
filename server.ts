@@ -194,21 +194,35 @@ app.post("/api/verify", async (req, res) => {
   return res.status(401).json({ success: false, error: "密碼錯誤或金鑰無效" });
 });
 
+let lastProxyFetchTime = 0;
+
 // GET /api/content (KV Proxy & Local Cache)
 app.get(["/api/content", "/api/remote-content"], async (_req, res) => {
-  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+
+  const now = Date.now();
+  // 60秒記憶體快取，避免重複穿透至遠端 Worker
+  if (inMemoryContentCache && (now - lastProxyFetchTime < 60000)) {
+    return res.json({
+      success: true,
+      content: inMemoryContentCache,
+      source: "server-memory-cached"
+    });
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
-    const remoteRes = await fetch(`https://cms-api.cine-dimension.com/api/content?_t=${Date.now()}`, {
+    const remoteRes = await fetch(`https://cms-api.cine-dimension.com/api/content`, {
       signal: controller.signal,
-      headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
+      headers: { "Accept": "application/json" }
     });
     clearTimeout(timeoutId);
     if (remoteRes.ok) {
       const data: any = await remoteRes.json();
       if (data?.content && (data.content.portfolio || data.content.siteInfo || data.content.assets)) {
         inMemoryContentCache = data.content;
+        lastProxyFetchTime = now;
         return res.json({
           success: true,
           content: inMemoryContentCache,

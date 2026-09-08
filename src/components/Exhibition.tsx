@@ -20,47 +20,7 @@ export const Exhibition: React.FC<ExhibitionProps> = ({ works, onNavigate, onPla
     return PORTFOLIO_CASES;
   });
 
-  // 2. Fetch latest dynamic content directly from Cloudflare KV API
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadDynamicContent() {
-      try {
-        const res = await fetch(`https://cms-api.cine-dimension.com/api/content?_t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const incomingPortfolio = data?.content?.portfolio || data?.portfolio;
-        if (isMounted && incomingPortfolio && Array.isArray(incomingPortfolio) && incomingPortfolio.length > 0) {
-          setWorksList(incomingPortfolio);
-        }
-      } catch (e) {
-        console.warn('動態載入作品失敗，使用預設值', e);
-      }
-    }
-
-    loadDynamicContent();
-
-    // Listen to admin CMS update events
-    const handleUpdate = () => {
-      loadDynamicContent();
-    };
-    window.addEventListener('cinedimension_content_updated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-
-    return () => {
-      isMounted = false;
-      window.removeEventListener('cinedimension_content_updated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-    };
-  }, []);
-
-  // Update when prop works changes
+  // Update when prop works changes from parent App
   useEffect(() => {
     if (works && Array.isArray(works) && works.length > 0) {
       setWorksList(works);

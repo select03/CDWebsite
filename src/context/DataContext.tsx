@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { FounderInfo, ServiceItem, PortfolioItem, Testimonial, InquiryLead, SiteAssets, SiteMetaInfo } from '../types';
 import { FOUNDER_INFO, SERVICES_CATALOG, PORTFOLIO_CASES, TESTIMONIALS } from '../data/siteData';
 import { STATIC_ASSETS } from '../constants/assets';
@@ -222,67 +222,39 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {}
   }, [leads]);
 
+  // Ref to prevent multiple syncFromRemote calls on initial mount
+  const isInitialFetchedRef = useRef(false);
+
   // Dynamic Runtime Data Fetching Engine (Cloudflare KV First)
   const syncFromRemote = useCallback(async () => {
+    if (isInitialFetchedRef.current) return;
+    isInitialFetchedRef.current = true;
+
     setIsSyncingRemote(true);
     setFetchError(null);
 
     const workerUrl = (localStorage.getItem('cms_worker_url') || localStorage.getItem('cinedimension_worker_url') || 'https://cms-api.cine-dimension.com').trim().replace(/\/+$/, '');
-    const token = (localStorage.getItem('cms_auth_token') || localStorage.getItem('cinedimension_admin_pass') || '').trim();
-
-    const timestamp = Date.now();
-    const fetchSources: { name: string; url: string; headers?: Record<string, string> }[] = [];
-
-    // 1. Cloudflare Worker API (KV Engine - Direct Public Read)
-    fetchSources.push({
-      name: 'Cloudflare Worker KV API (Direct)',
-      url: `https://cms-api.cine-dimension.com/api/content?_t=${timestamp}`
-    });
-
-    if (workerUrl && workerUrl !== 'https://cms-api.cine-dimension.com') {
-      fetchSources.push({
-        name: 'Custom Worker KV API',
-        url: `${workerUrl}/api/content?_t=${timestamp}`
-      });
-    }
-
-    // 2. Relative API route (if hosted on same domain / Pages functions)
-    fetchSources.push({
-      name: 'Local API Proxy /api/content',
-      url: `/api/content?_t=${timestamp}`
-    });
-
-    // 3. Fallback Remote Proxy endpoint
-    fetchSources.push({
-      name: 'Server Remote Content API',
-      url: `/api/remote-content?_t=${timestamp}`
-    });
+    const apiUrl = workerUrl || 'https://cms-api.cine-dimension.com';
 
     let rawData: any = null;
 
-    for (const source of fetchSources) {
-      try {
-        const res = await fetch(source.url, {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            ...(source.headers || {})
-          },
-          cache: 'no-store',
-          credentials: 'omit',
-          mode: 'cors'
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const content = json.content || json;
-          if (content && (content.portfolio || content.assets || content.siteInfo)) {
-            rawData = content;
-            break;
-          }
+    try {
+      const res = await fetch(`${apiUrl}/api/content`, {
+        headers: {
+          'Accept': 'application/json'
+        },
+        credentials: 'omit',
+        mode: 'cors'
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const content = json.content || json;
+        if (content && (content.portfolio || content.assets || content.siteInfo)) {
+          rawData = content;
         }
-      } catch (err) {
-        // Continue to fallback source
       }
+    } catch (err) {
+      // Ignore network errors and keep local data
     }
 
     if (rawData) {
@@ -369,7 +341,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [syncFromRemote]);
 
-  const updateAssets = (data: Partial<SiteAssets>) => {
+  const updateAssets = useCallback((data: Partial<SiteAssets>) => {
     setAssets(prev => {
       const next = { ...prev, ...data };
       const newImg = data.founderImage || data.avatar;
@@ -379,11 +351,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return next;
     });
-  };
+  }, []);
 
-  const updateSiteInfo = (data: Partial<SiteMetaInfo>) => {
+  const updateSiteInfo = useCallback((data: Partial<SiteMetaInfo>) => {
     setSiteInfo(prev => ({ ...prev, ...data }));
-  };
+  }, []);
 
   const addLead = (lead: Partial<InquiryLead>) => {
     const newLead: InquiryLead = {
