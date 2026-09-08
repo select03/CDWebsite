@@ -318,7 +318,7 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     ],
     featured: true,
     priceTag: '機構首選・口碑保證',
-    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80'
+    image: 'https://assets.cine-dimension.com/images/mob_pho_workshop.png'
   },
   {
     id: 'commercial-consulting',

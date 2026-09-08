@@ -9,7 +9,10 @@ interface HomeQuickPortalsProps {
 }
 
 export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate }) => {
-  const { founderInfo } = useSiteData();
+  const { founderInfo, services } = useSiteData();
+
+  const enterpriseCourse = services?.find(s => s.id === 'enterprise-training');
+  const courseImage = enterpriseCourse?.image || 'https://assets.cine-dimension.com/images/mob_pho_workshop.png';
 
   const portals = [
     {
@@ -27,7 +30,7 @@ export const HomeQuickPortals: React.FC<HomeQuickPortalsProps> = ({ onNavigate }
       category: 'COURSES & WORKSHOPS',
       title: 'SERVICES ｜ 系統課程與企業內訓',
       desc: '《手機拍出電影感》系統課、AI動態影音營、嘉義農會及企業客製培訓。',
-      image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+      image: courseImage,
       badge: '熱門講學專案',
       actionText: '探索課程與培訓',
       icon: <BookOpen className="w-4 h-4 text-stone-700" />

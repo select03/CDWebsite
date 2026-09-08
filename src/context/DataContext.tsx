@@ -37,7 +37,7 @@ const STORAGE_KEYS = {
   ASSETS: 'cine_dimension_assets_v18',
   SITE_INFO: 'cine_dimension_siteinfo_v18',
   FOUNDER: 'cine_dimension_founder_v18',
-  SERVICES: 'cine_dimension_services_v20',
+  SERVICES: 'cine_dimension_services_v21',
   PORTFOLIO: 'cine_dimension_portfolio_v20',
   TESTIMONIALS: 'cine_dimension_testimonials_v22',
   LEADS: 'cinedimension_inquiries'
@@ -178,7 +178,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [services, setServices] = useState<ServiceItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.SERVICES);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: ServiceItem[] = JSON.parse(saved);
+        return parsed.map(s => {
+          if (s.id === 'enterprise-training') {
+            const def = SERVICES_CATALOG.find(c => c.id === 'enterprise-training');
+            return { ...s, image: def?.image || 'https://assets.cine-dimension.com/images/mob_pho_workshop.png' };
+          }
+          return s;
+        });
+      }
     } catch (e) {}
     return SERVICES_CATALOG;
   });
