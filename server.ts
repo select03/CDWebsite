@@ -146,9 +146,52 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// POST /api/verify (Admin Auth Verification in Dev Mode)
-app.post("/api/verify", (_req, res) => {
-  res.json({ success: true, message: "驗證成功" });
+// POST /api/verify (Admin Auth Verification)
+app.post("/api/verify", async (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim() ||
+                (req.headers["x-admin-token"] as string) ||
+                (req.headers["x-admin-pass"] as string) ||
+                req.body?.token ||
+                req.body?.password ||
+                "";
+
+  // 徹底阻擋任何舊預設密碼與後門（包含 admin888 與 local_edit_mode）
+  if (!token || token === "admin888" || token === "local_edit_mode") {
+    return res.status(401).json({ success: false, error: "密碼錯誤或金鑰無效" });
+  }
+
+  // 1. 若伺服器環境配置了 ADMIN_PASS 或 ADMIN_SECRET，進行嚴格比對
+  const envPass = (process.env.ADMIN_PASS || "").trim();
+  const envSecret = (process.env.ADMIN_SECRET || "").trim();
+  if (envPass && token === envPass) {
+    return res.json({ success: true, message: "管理員驗證成功" });
+  }
+  if (envSecret && token === envSecret) {
+    return res.json({ success: true, message: "管理員驗證成功" });
+  }
+
+  // 2. 向線上 Cloudflare Worker API 驗證憑證
+  try {
+    const workerRes = await fetch("https://cms-api.cine-dimension.com/api/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+        "X-Admin-Token": token,
+        "X-Admin-Pass": token
+      },
+      body: JSON.stringify({ token })
+    });
+    if (workerRes.ok) {
+      const data = await workerRes.json();
+      return res.status(workerRes.status).json(data);
+    }
+  } catch (err) {
+    console.warn("Worker verify proxy failed:", err);
+  }
+
+  return res.status(401).json({ success: false, error: "密碼錯誤或金鑰無效" });
 });
 
 // GET /api/content (KV Proxy & Local Cache)
@@ -381,7 +424,11 @@ app.post(["/api/submit-form", "/api/contact"], async (req, res) => {
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === "true" ? false : undefined,
+        watch: process.env.DISABLE_HMR === "true" ? null : {}
+      },
       appType: "spa"
     });
     app.use(vite.middlewares);
@@ -398,4 +445,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});

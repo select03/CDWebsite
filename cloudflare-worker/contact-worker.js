@@ -195,13 +195,10 @@ function isAuthenticated(request, env) {
   const envPass = (env.ADMIN_PASS || "").trim();
   const envSecret = (env.ADMIN_SECRET || "").trim();
 
-  // 若 Cloudflare 後台有配置環境變數，以配置值為準
+  // 嚴格比對：只有當 token 符合 env.ADMIN_PASS 或 env.ADMIN_SECRET 時才允許通過
+  // 若環境變數未配置，預設一律拒絕所有管理端點請求（401 Unauthorized）
   if (envPass && token === envPass) return true;
   if (envSecret && token === envSecret) return true;
-
-  // 若無特別配置或使用預設管理密碼
-  if (token === "admin888" || token === "local_edit_mode") return true;
-  if (!envPass && !envSecret && token === "admin888") return true;
 
   return false;
 }

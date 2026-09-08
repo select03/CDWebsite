@@ -15,42 +15,55 @@ import { VideoTrailerModal } from './components/VideoTrailerModal';
 import { HomeQuickPortals } from './components/HomeQuickPortals';
 import { AdminCMS } from './components/AdminCMS';
 
+const API_URL = 'https://cms-api.cine-dimension.com/api/content';
+
 function MainAppContent() {
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [isTrailerOpen, setIsTrailerOpen] = useState<boolean>(false);
   const [preselectedService, setPreselectedService] = useState<string>('');
-  const { isSyncingRemote } = useData();
+  const { isSyncingRemote, updateSiteInfo, updateAssets } = useData();
 
-  // 1. Dynamic state for works/portfolio list
-  const [worksList, setWorksList] = useState<PortfolioItem[]>(PORTFOLIO_CASES);
+  // 1. Dynamic state for works/portfolio list and siteInfo
+  const [works, setWorks] = useState<PortfolioItem[]>(PORTFOLIO_CASES);
+  const [, setSiteInfo] = useState<any>(null);
 
   // 2. Fetch live dynamic content from Cloudflare KV API (no-store to prevent caching)
   useEffect(() => {
-    async function loadDynamicContent() {
+    async function fetchLiveContent() {
       try {
-        const res = await fetch(`https://cms-api.cine-dimension.com/api/content?_t=${Date.now()}`, {
+        const res = await fetch(`${API_URL}?_t=${Date.now()}`, {
           cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
+          headers: { 'Accept': 'application/json' }
         });
         if (!res.ok) return;
-        const data = await res.json();
-        const incomingPortfolio = data?.content?.portfolio || data?.portfolio;
-        if (incomingPortfolio && Array.isArray(incomingPortfolio) && incomingPortfolio.length > 0) {
-          setWorksList(incomingPortfolio);
+        const json = await res.json();
+        if (json && json.content) {
+          // 更新作品集
+          if (json.content.portfolio && Array.isArray(json.content.portfolio) && json.content.portfolio.length > 0) {
+            setWorks(json.content.portfolio);
+          }
+          // 更新全站品牌設定與 Logo
+          if (json.content.siteInfo) {
+            setSiteInfo(json.content.siteInfo);
+            updateSiteInfo(json.content.siteInfo);
+            if (json.content.siteInfo.logoUrl) {
+              updateAssets({ logo: json.content.siteInfo.logoUrl });
+            }
+          }
+          if (json.content.assets) {
+            updateAssets(json.content.assets);
+          }
         }
       } catch (e) {
-        console.warn('動態載入作品失敗，使用預設值', e);
+        console.warn('載入動態內容失敗，使用預設值', e);
       }
     }
 
-    loadDynamicContent();
+    fetchLiveContent();
 
     // Listen to admin CMS update events
     const handleUpdate = () => {
-      loadDynamicContent();
+      fetchLiveContent();
     };
     window.addEventListener('cinedimension_content_updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
@@ -59,7 +72,7 @@ function MainAppContent() {
       window.removeEventListener('cinedimension_content_updated', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
-  }, []);
+  }, [updateSiteInfo, updateAssets]);
 
   // Support accessing CMS via secret URL hash (e.g. your-site.com/#admin or /#cms)
   useEffect(() => {
@@ -119,7 +132,7 @@ function MainAppContent() {
         <main>
           {/* 1. 代表作展覽 (Exhibition Timeline, sorted by year) */}
           <Hero
-            works={worksList}
+            works={works}
             onNavigate={handleNavigate}
             onPlayTrailer={() => setIsTrailerOpen(true)}
           />
@@ -164,7 +177,7 @@ function MainAppContent() {
 
       {currentView === 'portfolio' && (
         <main>
-          <PortfolioShowcase works={worksList} />
+          <PortfolioShowcase works={works} />
           <Testimonials />
           <ContactSection
             preselectedService={preselectedService}

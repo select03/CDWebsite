@@ -154,7 +154,7 @@
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
     <!-- LOGIN / AUTH SCREEN -->
-    <div id="login-view" class="hidden max-w-md mx-auto my-12 p-8 rounded-2xl glass-panel border border-slate-800 space-y-6 text-center">
+    <div id="login-view" class="max-w-md mx-auto my-12 p-8 rounded-2xl glass-panel border border-slate-800 space-y-6 text-center">
       <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
         <i data-lucide="lock" class="w-7 h-7"></i>
       </div>
@@ -180,10 +180,12 @@
           <input 
             type="password" 
             id="login-admin-secret" 
-            placeholder="請輸入密碼 (預設 admin888)"
+            placeholder="請輸入管理員金鑰"
             class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-amber-500"
           />
         </div>
+
+        <div id="login-error-msg" class="hidden text-xs text-rose-400 font-medium py-1"></div>
 
         <button 
           onclick="handleLoginSubmit()"
@@ -191,18 +193,11 @@
         >
           立即驗證登入
         </button>
-
-        <button 
-          onclick="enterDirectEditMode()"
-          class="w-full py-2 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs rounded-xl border border-slate-800 transition-all cursor-pointer"
-        >
-          以預設模式直接進入後台
-        </button>
       </div>
     </div>
 
-    <!-- CMS DASHBOARD VIEW -->
-    <div id="dashboard-view" class="space-y-6">
+    <!-- CMS DASHBOARD VIEW (強制初始隱藏) -->
+    <div id="dashboard-view" class="hidden space-y-6">
 
       <!-- Navigation Tabs -->
       <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 flex-wrap gap-3">
@@ -751,10 +746,10 @@
           <input 
             type="password" 
             id="cfg-modal-admin-secret" 
-            placeholder="admin888"
+            placeholder="請輸入管理員金鑰"
             class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:outline-none focus:border-amber-500"
           />
-          <p class="text-[10px] text-slate-500 mt-1">需與 Cloudflare Worker 後台環境變數一致 (預設 admin888)</p>
+          <p class="text-[10px] text-slate-500 mt-1">需與 Cloudflare Worker 後台環境變數 (ADMIN_PASS / ADMIN_SECRET) 一致</p>
         </div>
 
         <!-- Live Connection Ping Test -->
@@ -800,10 +795,11 @@
       return localStorage.getItem(STORAGE_KEY_PASS) || 
              localStorage.getItem('cd_admin_token') || 
              localStorage.getItem('cms_admin_secret') || 
-             'admin888';
+             '';
     }
 
     function setStoredPass(pass) {
+      if (!pass) return;
       localStorage.setItem(STORAGE_KEY_PASS, pass);
       localStorage.setItem('cd_admin_token', pass);
       localStorage.setItem('cms_admin_secret', pass);
@@ -813,6 +809,10 @@
       localStorage.removeItem(STORAGE_KEY_PASS);
       localStorage.removeItem('cd_admin_token');
       localStorage.removeItem('cms_admin_secret');
+      const loginSecretInput = document.getElementById('login-admin-secret');
+      if (loginSecretInput) loginSecretInput.value = '';
+      const cfgSecretInput = document.getElementById('cfg-modal-admin-secret');
+      if (cfgSecretInput) cfgSecretInput.value = '';
     }
 
     function getStoredWorkerUrl() {
@@ -853,7 +853,7 @@
       const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
       const url = `${apiBase}${cleanEndpoint}`;
 
-      const token = getStoredPass() || 'admin888';
+      const token = getStoredPass();
 
       // 準備 Headers
       const headers = new Headers(options.headers || {});
@@ -1024,25 +1024,80 @@
     }
     let isDirty = false;
 
-    // 初始化流程
-    window.addEventListener('DOMContentLoaded', () => {
+    // 初始化流程：強制門禁鎖定（未驗證成功禁止進入後台）
+    window.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
 
-      const savedUrl = getStoredWorkerUrl() || DEFAULT_WORKER_URL;
-      document.getElementById('login-worker-url').value = savedUrl;
-      document.getElementById('cfg-modal-worker-url').value = savedUrl;
+      // 1. 預設強制顯示登入畫面，隱藏後台面板
+      const loginView = document.getElementById('login-view');
+      const dashboardView = document.getElementById('dashboard-view');
+      if (loginView) loginView.classList.remove('hidden');
+      if (dashboardView) dashboardView.classList.add('hidden');
 
-      const savedSecret = getStoredPass();
-      document.getElementById('login-admin-secret').value = savedSecret;
-      document.getElementById('cfg-modal-admin-secret').value = savedSecret;
+      const savedUrl = getStoredWorkerUrl() || DEFAULT_WORKER_URL;
+      const loginWorkerUrlEl = document.getElementById('login-worker-url');
+      if (loginWorkerUrlEl) loginWorkerUrlEl.value = savedUrl;
+      const cfgModalWorkerUrlEl = document.getElementById('cfg-modal-worker-url');
+      if (cfgModalWorkerUrlEl) cfgModalWorkerUrlEl.value = savedUrl;
 
       updateHeaderApiIndicator();
-      showDashboard();
+
+      // 2. 檢查 localStorage 是否有儲存密碼
+      const savedSecret = getStoredPass();
+      if (!savedSecret) {
+        // 若無密碼：嚴格維持在登入畫面，等待使用者手動輸入
+        return;
+      }
+
+      // 3. 若有密碼：在背景發送 POST /api/verify 驗證身分憑證
+      const loginSecretEl = document.getElementById('login-admin-secret');
+      if (loginSecretEl) loginSecretEl.value = savedSecret;
+      const cfgModalSecretEl = document.getElementById('cfg-modal-admin-secret');
+      if (cfgModalSecretEl) cfgModalSecretEl.value = savedSecret;
+
+      const loginErrorEl = document.getElementById('login-error-msg');
+      if (loginErrorEl) {
+        loginErrorEl.innerText = '正在驗證登入憑證...';
+        loginErrorEl.className = 'text-xs text-amber-400 font-medium py-1';
+      }
+
+      try {
+        const apiBase = (savedUrl || DEFAULT_WORKER_URL).replace(/\/+$/, '');
+        const res = await fetch(`${apiBase}/api/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${savedSecret}`,
+            'X-Admin-Token': savedSecret,
+            'X-Admin-Pass': savedSecret
+          },
+          body: JSON.stringify({ token: savedSecret })
+        });
+
+        if (res.ok) {
+          if (loginErrorEl) loginErrorEl.className = 'hidden';
+          showDashboard();
+        } else {
+          // 密碼驗證失敗：清空 localStorage 並保持在登入頁面，提示密碼錯誤
+          removeStoredPass();
+          if (loginErrorEl) {
+            loginErrorEl.innerText = '管理密碼驗證失敗或已失效，請重新輸入';
+            loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
+          }
+        }
+      } catch (err) {
+        console.warn('背景驗證網路錯誤:', err);
+        // 若連線異常，保持在登入畫面，提示使用者
+        if (loginErrorEl) {
+          loginErrorEl.innerText = '無法連線至 Worker API 驗證密碼，請手動點擊驗證登入';
+          loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
+        }
+      }
     });
 
     function showDashboard() {
-      document.getElementById('login-view').classList.add('hidden');
-      document.getElementById('dashboard-view').classList.remove('hidden');
+      document.getElementById('login-view')?.classList.add('hidden');
+      document.getElementById('dashboard-view')?.classList.remove('hidden');
       updateHeaderApiIndicator();
       loadContentFromKV();
     }
@@ -1912,27 +1967,76 @@
     }
 
     function handleLogout() {
-      if (confirm('確定要退出後台嗎？')) {
-        document.getElementById('dashboard-view').classList.add('hidden');
-        document.getElementById('login-view').classList.remove('hidden');
-        showToast('已登出後台', 'info');
+      if (confirm('確定要登出並鎖定後台嗎？登出後將清除本機金鑰。')) {
+        removeStoredPass();
+        sessionStorage.clear();
+        location.reload();
       }
     }
 
-    function enterDirectEditMode() {
-      showDashboard();
-      showToast('已進入後台編輯模式', 'success');
-    }
+    async function handleLoginSubmit() {
+      const url = document.getElementById('login-worker-url')?.value?.trim() || '';
+      const secret = document.getElementById('login-admin-secret')?.value?.trim() || '';
+      const loginErrorEl = document.getElementById('login-error-msg');
 
-    function handleLoginSubmit() {
-      const url = document.getElementById('login-worker-url').value.trim();
-      const secret = document.getElementById('login-admin-secret').value.trim();
+      if (!secret) {
+        if (loginErrorEl) {
+          loginErrorEl.innerText = '請輸入後台管理金鑰 (ADMIN_PASS)';
+          loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
+        }
+        showToast('請輸入管理員金鑰', 'error');
+        return;
+      }
+
+      const submitBtn = event?.target || document.querySelector('#login-view button');
+      const originalText = submitBtn ? submitBtn.innerText : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = '身分驗證中...';
+      }
 
       if (url) setStoredWorkerUrl(url);
-      if (secret) setStoredPass(secret);
 
-      showDashboard();
-      testApiConnection(true);
+      try {
+        const apiBase = (url || getStoredWorkerUrl() || DEFAULT_WORKER_URL).replace(/\/+$/, '');
+        const res = await fetch(`${apiBase}/api/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${secret}`,
+            'X-Admin-Token': secret,
+            'X-Admin-Pass': secret
+          },
+          body: JSON.stringify({ token: secret })
+        });
+
+        if (res.ok) {
+          setStoredPass(secret);
+          if (loginErrorEl) loginErrorEl.className = 'hidden';
+          showToast('管理員驗證成功，正在載入後台...', 'success');
+          showDashboard();
+          testApiConnection(true);
+        } else {
+          removeStoredPass();
+          if (loginErrorEl) {
+            loginErrorEl.innerText = '管理密碼錯誤，拒絕存取 (401 Unauthorized)';
+            loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
+          }
+          showToast('密碼錯誤，請確認後重試', 'error');
+        }
+      } catch (err) {
+        console.error('Login verify error:', err);
+        if (loginErrorEl) {
+          loginErrorEl.innerText = '無法連線至 Worker API 進行驗證，請確認網路或 API 網址';
+          loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
+        }
+        showToast('連線失敗，請檢查 API 網址', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = originalText;
+        }
+      }
     }
 
     function resetToDefaultLogo() {
