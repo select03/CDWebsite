@@ -18,7 +18,7 @@ export const Testimonials: React.FC = () => {
             學員與合作單位評價
           </h2>
           <p className="text-xs sm:text-sm font-serif text-stone-600 leading-relaxed">
-            真實甜點品牌創辦人、嘉義竹崎農會返鄉青農與行銷總監的學習反饋。
+            嘉義竹崎農會手機影音實戰班青農學員與主辦單位的真實課後產值反饋。
           </p>
         </div>
 
@@ -51,12 +51,17 @@ export const Testimonials: React.FC = () => {
                 <img
                   src={t.avatar}
                   alt={t.name}
-                  className="w-9 h-9 rounded-full object-cover border border-stone-400"
+                  className="w-10 h-10 rounded-full object-cover border border-stone-400/80 shadow-xs bg-stone-100 shrink-0"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    // Fallback to stylized initial if image fails
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
+                  }}
                 />
-                <div className="font-sans text-xs">
+                <div className="font-sans text-xs min-w-0">
                   <h4 className="font-bold text-stone-900">{t.name}</h4>
-                  <p className="text-stone-600 text-[11px]">{t.role} ｜ {t.organization}</p>
+                  <p className="text-stone-600 text-[11px] truncate">{t.role} ｜ {t.organization}</p>
                 </div>
               </div>
 

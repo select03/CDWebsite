@@ -71,7 +71,24 @@ function MainAppContent() {
     isContentAppliedRef.current = true;
 
     if (remoteContent.portfolio && Array.isArray(remoteContent.portfolio) && remoteContent.portfolio.length > 0) {
-      setWorks(remoteContent.portfolio);
+      const defaultMap = new Map(PORTFOLIO_CASES.map(c => [c.id, c]));
+      const mergedWorks = remoteContent.portfolio.map((item: any) => {
+        const local = defaultMap.get(item.id);
+        if (local) {
+          const isRemoteOutdated = local.id === 'wedding-films-collection' && !item.description?.includes('關島');
+          const finalImage = local.id === 'shell-lubricants-ad' ? local.image : (item.image || local.image);
+          return {
+            ...local,
+            ...item,
+            image: finalImage,
+            description: isRemoteOutdated ? local.description : (item.description || local.description),
+            highlights: isRemoteOutdated ? local.highlights : (item.highlights || local.highlights),
+            tags: isRemoteOutdated ? local.tags : (item.tags || local.tags)
+          };
+        }
+        return item;
+      });
+      setWorks(mergedWorks);
     }
     if (remoteContent.siteInfo) {
       updateSiteInfo(remoteContent.siteInfo);

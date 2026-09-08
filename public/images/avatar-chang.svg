@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <!-- 圓形遮罩 -->
+    <clipPath id="changClip">
+      <circle cx="200" cy="200" r="190"/>
+    </clipPath>
+    <!-- 背景自然田園光影（柔和綠意與戶外棚架自然光） -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0"/>
+      <stop offset="40%" stop-color="#CBD5E1"/>
+      <stop offset="85%" stop-color="#94A3B8"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <!-- 戶外綠植光暈 -->
+    <radialGradient id="greenGlow" cx="80%" cy="75%" r="50%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 暖調膚色漸層 -->
+    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D"/>
+      <stop offset="20%" stop-color="#FBBF24"/>
+      <stop offset="70%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <!-- 立領外套深灰金屬質感漸層 -->
+    <linearGradient id="jacketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4B5563"/>
+      <stop offset="50%" stop-color="#374151"/>
+      <stop offset="100%" stop-color="#1F2937"/>
+    </linearGradient>
+    <!-- 酒紅內裡邊緣 -->
+    <linearGradient id="redLining" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#DC2626"/>
+      <stop offset="100%" stop-color="#991B1B"/>
+    </linearGradient>
+    <!-- 鏡片微光 -->
+    <linearGradient id="glassReflection" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 外層優雅邊框底圈 -->
+  <circle cx="200" cy="200" r="198" fill="#F6F4EE" stroke="#A8A29E" stroke-width="2"/>
+
+  <!-- 主內容遮罩區 -->
+  <g clip-path="url(#changClip)">
+    <!-- 柔和明亮的戶外棚頂與自然採光 -->
+    <rect x="0" y="0" width="400" height="400" fill="url(#bgGrad)"/>
+    
+    <!-- 戶外果園綠意散景光斑（右側綠樹植栽氛圍） -->
+    <circle cx="320" cy="290" r="120" fill="url(#greenGlow)"/>
+    <circle cx="70" cy="310" r="90" fill="#059669" opacity="0.15"/>
+
+    <!-- 身體與立領防風保暖夾克（還原截圖衣著特徵：深灰夾克帶紅邊與黑內搭） -->
+    <g transform="translate(0, 10)">
+      <!-- 外套本體 -->
+      <path d="M70,390 Q120,290 150,285 L250,285 Q280,290 330,390 Z" fill="url(#jacketGrad)"/>
+      
+      <!-- 外套左右前襟與立領 -->
+      <path d="M120,390 L155,270 L180,270 L170,390 Z" fill="#374151"/>
+      <path d="M280,390 L245,270 L220,270 L230,390 Z" fill="#374151"/>
+
+      <!-- 紅色拉鍊內襯邊緣（截圖清晰特徵） -->
+      <path d="M172,280 L182,340 L195,390 L188,390 L176,335 L168,280 Z" fill="url(#redLining)"/>
+      <path d="M228,280 L218,340 L205,390 L212,390 L224,335 L232,280 Z" fill="url(#redLining)"/>
+
+      <!-- 黑色內搭上衣領口 -->
+      <path d="M180,300 Q200,315 220,300 L215,390 L185,390 Z" fill="#111827"/>
+      
+      <!-- 脖子 -->
+      <path d="M175,250 L175,290 Q200,300 225,290 L225,250 Z" fill="#F59E0B"/>
+    </g>
+
+    <!-- 頭部與臉部神韻（還原截圖：親切微笑、戴眼鏡、中壯年成熟青農） -->
+    <g transform="translate(0, -5)">
+      <!-- 臉型（溫潤飽滿的親切輪廓） -->
+      <path d="M140,165 Q135,245 200,262 Q265,245 260,165 Q260,105 200,105 Q140,105 140,165 Z" fill="url(#skinGrad)"/>
+
+      <!-- 耳朵 -->
+      <ellipse cx="137" cy="180" rx="8" ry="16" fill="#F59E0B"/>
+      <ellipse cx="263" cy="180" rx="8" ry="16" fill="#F59E0B"/>
+
+      <!-- 髮型（截圖特徵：短黑髮、微露出額頭的分線） -->
+      <path d="M135,150 Q138,92 200,90 Q262,92 265,150 Q245,115 200,118 Q155,115 135,150 Z" fill="#18181B"/>
+      <path d="M140,120 Q165,100 200,105 Q245,95 260,125 Q240,105 200,108 Q160,105 140,120 Z" fill="#27272A"/>
+
+      <!-- 眉毛（柔和自然的親和眉型） -->
+      <path d="M158,152 Q173,147 186,151" stroke="#27272A" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M214,151 Q227,147 242,152" stroke="#27272A" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+      <!-- 眼睛與眼角笑紋（截圖特徵：和善溫暖的瞇眼笑意） -->
+      <path d="M162,166 Q173,161 183,165" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <ellipse cx="173" cy="165" rx="3" ry="2" fill="#111827"/>
+      <!-- 眼角笑紋 -->
+      <path d="M156,166 Q153,168 152,172" stroke="#B45309" stroke-width="1" stroke-linecap="round" fill="none"/>
+
+      <path d="M217,165 Q227,161 238,166" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <ellipse cx="227" cy="165" rx="3" ry="2" fill="#111827"/>
+      <path d="M244,166 Q247,168 248,172" stroke="#B45309" stroke-width="1" stroke-linecap="round" fill="none"/>
+
+      <!-- 精緻黑框眼鏡（截圖最核心特徵：長方圓角黑細框眼鏡與中樑） -->
+      <!-- 左鏡框 -->
+      <rect x="154" y="154" width="36" height="24" rx="5" fill="url(#glassReflection)" stroke="#18181B" stroke-width="3"/>
+      <!-- 右鏡框 -->
+      <rect x="210" y="154" width="36" height="24" rx="5" fill="url(#glassReflection)" stroke="#18181B" stroke-width="3"/>
+      <!-- 眼鏡中樑 -->
+      <path d="M190,163 Q200,160 210,163" stroke="#18181B" stroke-width="3" fill="none"/>
+      <!-- 眼鏡鏡腳伸向耳朵 -->
+      <path d="M154,163 L138,172" stroke="#18181B" stroke-width="2.5"/>
+      <path d="M246,163 L262,172" stroke="#18181B" stroke-width="2.5"/>
+
+      <!-- 鼻子（樸實飽滿） -->
+      <path d="M197,175 Q200,192 195,195 Q200,198 205,195 Q202,192 203,175" fill="#D97706" opacity="0.6"/>
+      <path d="M194,195 Q200,200 206,195" stroke="#B45309" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+      <!-- 微笑嘴唇（截圖特徵：親切微微上揚的滿足笑容） -->
+      <path d="M182,216 Q200,228 218,216" stroke="#9A3412" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <path d="M188,217 Q200,224 212,217" fill="#FEF3C7" opacity="0.6"/>
+      <path d="M194,228 Q200,232 206,228" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- 頂部柔和日光高光 -->
+    <ellipse cx="200" cy="50" rx="180" ry="40" fill="#FFFFFF" opacity="0.15"/>
+  </g>
+
+  <!-- 內襯極細電影感金屬光環飾邊 -->
+  <circle cx="200" cy="200" r="190" fill="none" stroke="#D6D3D1" stroke-width="3"/>
+</svg>

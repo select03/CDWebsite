@@ -38,7 +38,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
     phone: '',
     organization: '',
     serviceType: preselectedService || '《維度影學：手機拍出電影感》系統課',
-    budgetRange: 'NT$ 10,000 - 30,000',
+    budgetRange: '',
     preferredTime: '希望一個月內展開',
     message: '',
     hp_website: '' // Honeypot trap
@@ -70,13 +70,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
     '商業影像顧問與客製大片拍攝',
     '創作者與個人品牌一對一導師',
     '其他演講與客製合作邀請'
-  ];
-
-  const budgetOptions = [
-    'NT$ 5,000 - 10,000 （個人課程/訓練營）',
-    'NT$ 10,000 - 30,000 （進階班/一對一）',
-    'NT$ 30,000 - 80,000 （農會/企業內訓）',
-    'NT$ 80,000+ （商業拍攝與品牌顧問）'
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -445,37 +438,19 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     </select>
                   </div>
 
-                  {/* Budget & Time */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block font-bold text-stone-800 mb-1 text-xs sm:text-sm">
-                        預算範圍
-                      </label>
-                      <select
-                        name="budgetRange"
-                        value={formData.budgetRange}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 focus:outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all text-xs sm:text-sm"
-                      >
-                        {budgetOptions.map((opt, i) => (
-                          <option key={i} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-stone-800 mb-1 text-xs sm:text-sm">
-                        期望時間
-                      </label>
-                      <input
-                        type="text"
-                        name="preferredTime"
-                        value={formData.preferredTime}
-                        onChange={handleChange}
-                        placeholder="例：一個月內 / 隨時"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all text-xs sm:text-sm"
-                      />
-                    </div>
+                  {/* Timeline */}
+                  <div>
+                    <label className="block font-bold text-stone-800 mb-1 text-xs sm:text-sm">
+                      期望展開時間 Preferred Timeline
+                    </label>
+                    <input
+                      type="text"
+                      name="preferredTime"
+                      value={formData.preferredTime}
+                      onChange={handleChange}
+                      placeholder="例：希望一個月內展開 / 隨時 / 預計 10 月進行"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all text-xs sm:text-sm"
+                    />
                   </div>
 
                   {/* Message */}

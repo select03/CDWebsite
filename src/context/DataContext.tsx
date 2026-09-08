@@ -37,9 +37,9 @@ const STORAGE_KEYS = {
   ASSETS: 'cine_dimension_assets_v18',
   SITE_INFO: 'cine_dimension_siteinfo_v18',
   FOUNDER: 'cine_dimension_founder_v18',
-  SERVICES: 'cine_dimension_services_v18',
-  PORTFOLIO: 'cine_dimension_portfolio_v18',
-  TESTIMONIALS: 'cine_dimension_testimonials_v18',
+  SERVICES: 'cine_dimension_services_v20',
+  PORTFOLIO: 'cine_dimension_portfolio_v20',
+  TESTIMONIALS: 'cine_dimension_testimonials_v22',
   LEADS: 'cinedimension_inquiries'
 };
 
@@ -94,19 +94,47 @@ function mergePortfolioWithDefaults(remoteList: any[], defaultList: PortfolioIte
   if (!Array.isArray(remoteList) || remoteList.length === 0) {
     return defaultList;
   }
-  return remoteList.map((item, index) => ({
-    id: item.id || `portfolio_${index}_${Date.now()}`,
-    title: item.title || '精選專案作品',
-    category: item.category || '商業動態影音',
-    clientOrProject: item.clientOrProject || item.client || '',
-    year: item.year || new Date().getFullYear().toString(),
-    description: item.description || '',
-    role: item.role || '導演 / 攝影師',
-    tags: Array.isArray(item.tags) ? item.tags : ['手機攝影', '電影感視覺'],
-    image: item.image || item.imageUrl || STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL,
-    videoUrl: item.videoUrl || '',
-    highlights: Array.isArray(item.highlights) ? item.highlights : []
-  }));
+  const defaultMap = new Map<string, PortfolioItem>();
+  defaultList.forEach(item => defaultMap.set(item.id, item));
+
+  return remoteList.map((item, index) => {
+    const id = item.id || `portfolio_${index}_${Date.now()}`;
+    const defaultItem = defaultMap.get(id);
+
+    let description = item.description || defaultItem?.description || '';
+    let highlights = Array.isArray(item.highlights) && item.highlights.length > 0
+      ? item.highlights
+      : (defaultItem ? defaultItem.highlights : []);
+    let tags = Array.isArray(item.tags) && item.tags.length > 0
+      ? item.tags
+      : (defaultItem ? defaultItem.tags : ['手機攝影', '電影感視覺']);
+
+    // 特殊保護：若遠端 wedding-films-collection 尚無關島海外婚禮文案，優先採用最新 defaultItem 文案
+    if (id === 'wedding-films-collection' && defaultItem && !description.includes('關島')) {
+      description = defaultItem.description;
+      highlights = defaultItem.highlights;
+      tags = defaultItem.tags;
+    }
+
+    let image = item.image || item.imageUrl || defaultItem?.image || STATIC_ASSETS.PORTFOLIO_FALLBACK_THUMBNAIL;
+    if (id === 'shell-lubricants-ad' && defaultItem) {
+      image = defaultItem.image;
+    }
+
+    return {
+      id,
+      title: item.title || defaultItem?.title || '精選專案作品',
+      category: item.category || defaultItem?.category || '商業動態影音',
+      clientOrProject: item.clientOrProject || item.client || defaultItem?.clientOrProject || '',
+      year: item.year || defaultItem?.year || new Date().getFullYear().toString(),
+      description,
+      role: item.role || defaultItem?.role || '導演 / 攝影師',
+      tags,
+      image,
+      videoUrl: item.videoUrl || defaultItem?.videoUrl || '',
+      highlights
+    };
+  });
 }
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -158,7 +186,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PORTFOLIO);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        return mergePortfolioWithDefaults(JSON.parse(saved), PORTFOLIO_CASES);
+      }
     } catch (e) {}
     return PORTFOLIO_CASES;
   });

@@ -187,15 +187,15 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         <div className="p-6 rounded bg-[#EFECE6] border border-stone-300 flex flex-col md:flex-row items-center justify-between gap-6 text-left">
           <div className="space-y-1 font-serif">
             <h3 className="text-base font-bold text-stone-900">
-              嘉義農會、地方機構或企業內訓客製包班？
+              農會、政府機構或企業團隊需要客製影音內訓包班？
             </h3>
             <p className="text-stone-600 text-xs font-sans">
-              悟哥提供特製現場美學佈光與實戰拍剪 Sop 模組，歡迎直接進行需求預約。
+              以嘉義竹崎農會 98% 滿意度為標竿，提供 2 天 12 小時「靜態商品海報 ＋ 動態宣傳短影音」全實戰排程，歡迎直接提出合作洽詢。
             </p>
           </div>
           <button
-            onClick={() => onSelectServiceForContact('企業與農會在地影音內訓工作坊')}
-            className="shrink-0 px-5 py-2 rounded bg-stone-900 text-[#F6F4EE] text-xs font-sans font-bold uppercase tracking-widest"
+            onClick={() => onSelectServiceForContact('農會・企業・機構客製影音內訓')}
+            className="shrink-0 px-5 py-2 rounded bg-stone-900 text-[#F6F4EE] text-xs font-sans font-bold uppercase tracking-widest hover:bg-stone-800 transition-colors"
           >
             CUSTOM REQUEST / 客製需求洽詢
           </button>

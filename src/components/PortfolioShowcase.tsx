@@ -126,7 +126,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({ works }) =
                   <p className="text-xs font-sans text-stone-600">
                     專案：{item.clientOrProject} ｜ 角色：{item.role}
                   </p>
-                  <p className="text-xs font-serif text-stone-700 leading-relaxed">
+                  <p className="text-xs font-serif text-stone-700 leading-relaxed whitespace-pre-line">
                     {item.description}
                   </p>
 
@@ -216,7 +216,7 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({ works }) =
               </div>
             )}
 
-            <p className="text-xs font-serif text-stone-700 leading-relaxed mb-4">
+            <p className="text-xs font-serif text-stone-700 leading-relaxed whitespace-pre-line mb-4">
               {selectedCase.description}
             </p>
 

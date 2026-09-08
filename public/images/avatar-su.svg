@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <!-- 圓形遮罩 -->
+    <clipPath id="circleClip">
+      <circle cx="200" cy="200" r="190"/>
+    </clipPath>
+    <!-- 天空與山林漸層 -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7DD3FC"/>
+      <stop offset="40%" stop-color="#BAE6FD"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <!-- 高山碧綠湖水漸層（還原截圖翡翠綠） -->
+    <linearGradient id="lakeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0D9488"/>
+      <stop offset="45%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <!-- 木造獨木舟漸層 -->
+    <linearGradient id="boatGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#92400E"/>
+      <stop offset="50%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+    <!-- 自然柔光 -->
+    <radialGradient id="sunGlow" cx="65%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#FFFBEB" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#FFFBEB" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 外層優雅邊框底圈 -->
+  <circle cx="200" cy="200" r="198" fill="#F6F4EE" stroke="#A8A29E" stroke-width="2"/>
+
+  <!-- 主內容遮罩區 -->
+  <g clip-path="url(#circleClip)">
+    <!-- 天空與背景林蔭 -->
+    <rect x="0" y="0" width="400" height="230" fill="url(#skyGrad)"/>
+
+    <!-- 翠綠高山山林重疊輪廓（還原截圖背景山巒） -->
+    <path d="M-20,180 Q60,90 140,150 T280,110 Q340,130 420,170 L420,240 L-20,240 Z" fill="#065F46" opacity="0.85"/>
+    <path d="M-10,200 Q90,140 180,190 T350,150 Q390,170 420,210 L420,260 L-10,260 Z" fill="#047857"/>
+    
+    <!-- 翠綠碧水湖面 -->
+    <rect x="0" y="210" width="400" height="190" fill="url(#lakeGrad)"/>
+
+    <!-- 湖面水波倒影細節 -->
+    <ellipse cx="200" cy="270" rx="140" ry="8" fill="#34D399" opacity="0.35"/>
+    <ellipse cx="180" cy="310" rx="100" ry="6" fill="#6EE7B7" opacity="0.25"/>
+    <ellipse cx="220" cy="350" rx="70" ry="4" fill="#A7F3D0" opacity="0.2"/>
+
+    <!-- 金黃木造獨木舟（由下至中向前延伸） -->
+    <path d="M140,400 L185,250 Q200,240 215,250 L260,400 Q200,410 140,400 Z" fill="url(#boatGrad)" stroke="#78350F" stroke-width="2"/>
+    <path d="M165,395 L192,260 Q200,255 208,260 L235,395 Z" fill="#78350F" opacity="0.4"/>
+
+    <!-- 蘇小姐主體（坐在小舟上，向鏡頭開朗招手） -->
+    <g transform="translate(0, -10)">
+      <!-- 雙腿牛仔褲坐在船內 -->
+      <path d="M180,310 L170,350 L190,350 L195,310 Z" fill="#1E3A8A"/>
+      <path d="M220,310 L230,350 L210,350 L205,310 Z" fill="#1E40AF"/>
+
+      <!-- 戶外長袖休閒服與裝備 -->
+      <path d="M180,270 L220,270 L225,315 L175,315 Z" fill="#1F2937" rx="4"/>
+      <!-- 救生裝備/戶外背帶 -->
+      <path d="M190,270 L190,315 M210,270 L210,315" stroke="#38BDF8" stroke-width="3"/>
+
+      <!-- 開朗向上高舉揮動的手臂（右手向天空高舉） -->
+      <!-- 截圖核心特徵：右手興奮伸直揮手 -->
+      <path d="M180,275 L150,225 L160,220 L185,268 Z" fill="#1F2937"/>
+      <!-- 手腕手掌比讚揮手 -->
+      <circle cx="145" cy="215" r="7" fill="#FDBA74"/>
+      <!-- 另一隻手扶在船側 -->
+      <path d="M220,275 L235,300 L228,305 L215,280 Z" fill="#1F2937"/>
+
+      <!-- 頭部與圓盤遮陽帽 -->
+      <circle cx="200" cy="245" r="14" fill="#FDBA74"/>
+      <!-- 圓頂遮陽草帽（米色草編帽簷） -->
+      <ellipse cx="200" cy="238" rx="28" ry="8" fill="#FDE68A" stroke="#D97706" stroke-width="1.5"/>
+      <path d="M186,238 Q200,220 214,238 Z" fill="#F59E0B"/>
+      <!-- 黑色草帽帶 -->
+      <path d="M188,237 Q200,234 212,237" stroke="#78350F" stroke-width="2"/>
+    </g>
+
+    <!-- 陽光漫射自然柔光覆蓋 -->
+    <rect x="0" y="0" width="400" height="400" fill="url(#sunGlow)"/>
+  </g>
+
+  <!-- 內襯極細電影感金屬光環飾邊 -->
+  <circle cx="200" cy="200" r="190" fill="none" stroke="#D6D3D1" stroke-width="3"/>
+</svg>

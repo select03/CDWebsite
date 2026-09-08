@@ -9,7 +9,7 @@ export const STATIC_ASSETS = {
   /** 個人大頭照 Avatar (Cloudflare R2 永久網址) */
   AVATAR: 'https://assets.cine-dimension.com/avatar.JPG',
   /** 作品集預設縮圖與 Fallback 封面圖 (Cloudflare R2 永久網址) */
-  PORTFOLIO_FALLBACK_THUMBNAIL: 'https://assets.cine-dimension.com/shell.PNG',
+  PORTFOLIO_FALLBACK_THUMBNAIL: 'https://assets.cine-dimension.com/shell%20.PNG',
 } as const;
 
 export const LOGO_FALLBACK_CANDIDATES = [

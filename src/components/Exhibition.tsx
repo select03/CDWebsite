@@ -123,7 +123,7 @@ export const Exhibition: React.FC<ExhibitionProps> = ({ works, onNavigate, onPla
                 )}
 
                 {/* Dynamic Description text bound directly to state */}
-                <p className="text-xs sm:text-sm font-serif text-stone-700 leading-relaxed pt-1">
+                <p className="text-xs sm:text-sm font-serif text-stone-700 leading-relaxed pt-1 whitespace-pre-line">
                   {item.description}
                 </p>
 
