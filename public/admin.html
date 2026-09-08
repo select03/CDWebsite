@@ -188,6 +188,7 @@
         <div id="login-error-msg" class="hidden text-xs text-rose-400 font-medium py-1"></div>
 
         <button 
+          id="btn-login-submit"
           onclick="handleLoginSubmit()"
           class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-950/40 transition-all cursor-pointer"
         >
@@ -1975,66 +1976,49 @@
     }
 
     async function handleLoginSubmit() {
-      const url = document.getElementById('login-worker-url')?.value?.trim() || '';
-      const secret = document.getElementById('login-admin-secret')?.value?.trim() || '';
-      const loginErrorEl = document.getElementById('login-error-msg');
+      const secretInput = document.getElementById('login-admin-secret');
+      const secret = secretInput ? secretInput.value.trim() : '';
+      const loginBtn = document.getElementById('btn-login-submit');
 
       if (!secret) {
-        if (loginErrorEl) {
-          loginErrorEl.innerText = '請輸入後台管理金鑰 (ADMIN_PASS)';
-          loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
-        }
-        showToast('請輸入管理員金鑰', 'error');
+        showToast('請輸入管理員金鑰', 'warning');
+        if (secretInput) secretInput.focus();
         return;
       }
 
-      const submitBtn = event?.target || document.querySelector('#login-view button');
-      const originalText = submitBtn ? submitBtn.innerText : '';
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerText = '身分驗證中...';
+      // 固化 API 網址為預設官方節點
+      setStoredWorkerUrl(DEFAULT_WORKER_URL);
+      setStoredPass(secret);
+
+      if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.innerText = '正在驗證金鑰...';
       }
 
-      if (url) setStoredWorkerUrl(url);
-
       try {
-        const apiBase = (url || getStoredWorkerUrl() || DEFAULT_WORKER_URL).replace(/\/+$/, '');
-        const res = await fetch(`${apiBase}/api/verify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${secret}`,
-            'X-Admin-Token': secret,
-            'X-Admin-Pass': secret
-          },
-          body: JSON.stringify({ token: secret })
-        });
+        const res = await safeApiFetch('/api/verify', { method: 'POST' });
+        const data = await res.json();
 
-        if (res.ok) {
-          setStoredPass(secret);
-          if (loginErrorEl) loginErrorEl.className = 'hidden';
-          showToast('管理員驗證成功，正在載入後台...', 'success');
+        if (res.ok && data.success) {
+          showToast('金鑰驗證通過，進入後台', 'success');
           showDashboard();
           testApiConnection(true);
         } else {
           removeStoredPass();
-          if (loginErrorEl) {
-            loginErrorEl.innerText = '管理密碼錯誤，拒絕存取 (401 Unauthorized)';
-            loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
+          if (secretInput) {
+            secretInput.value = '';
+            secretInput.focus();
           }
-          showToast('密碼錯誤，請確認後重試', 'error');
+          showToast(data.error || '管理員金鑰錯誤，請重新輸入', 'error');
         }
       } catch (err) {
-        console.error('Login verify error:', err);
-        if (loginErrorEl) {
-          loginErrorEl.innerText = '無法連線至 Worker API 進行驗證，請確認網路或 API 網址';
-          loginErrorEl.className = 'text-xs text-rose-400 font-medium py-1';
-        }
-        showToast('連線失敗，請檢查 API 網址', 'error');
+        console.error('[Login Verification Error]:', err);
+        removeStoredPass();
+        showToast(`連線驗證失敗：${err.message}`, 'error');
       } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerText = originalText;
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.innerText = '立即驗證登入';
         }
       }
     }
