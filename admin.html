@@ -165,17 +165,6 @@
 
       <div class="space-y-4 text-left">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Cloudflare Worker API 網址</label>
-          <input 
-            type="url" 
-            id="login-worker-url" 
-            placeholder="https://cms-api.cine-dimension.com"
-            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-amber-500"
-          />
-          <p class="text-[10px] text-slate-500 mt-1">預設已自動指派至 https://cms-api.cine-dimension.com</p>
-        </div>
-
-        <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1.5">後台管理員金鑰 (ADMIN_PASS)</label>
           <input 
             type="password" 
@@ -832,10 +821,9 @@
      */
     function getApiBase() {
       const modalInput = document.getElementById('cfg-modal-worker-url')?.value?.trim();
-      const loginInput = document.getElementById('login-worker-url')?.value?.trim();
       const stored = getStoredWorkerUrl();
 
-      let targetUrl = modalInput || loginInput || stored || DEFAULT_WORKER_URL;
+      let targetUrl = modalInput || stored || DEFAULT_WORKER_URL;
       return targetUrl.replace(/\/+$/, '');
     }
 
@@ -1036,8 +1024,6 @@
       if (dashboardView) dashboardView.classList.add('hidden');
 
       const savedUrl = getStoredWorkerUrl() || DEFAULT_WORKER_URL;
-      const loginWorkerUrlEl = document.getElementById('login-worker-url');
-      if (loginWorkerUrlEl) loginWorkerUrlEl.value = savedUrl;
       const cfgModalWorkerUrlEl = document.getElementById('cfg-modal-worker-url');
       if (cfgModalWorkerUrlEl) cfgModalWorkerUrlEl.value = savedUrl;
 
