@@ -51,6 +51,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
     updateAssets,
     siteInfo,
     updateSiteInfo,
+    tools,
     syncFromRemote,
     isSyncingRemote,
     lastSyncTime
@@ -316,7 +317,24 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
           logo: resolvedLogo,
           founderImage: resolvedFounder
         },
-        portfolio
+        portfolio,
+        tools: (tools && tools.length > 0) ? tools : [
+          {
+            id: "typeless",
+            name: "Typeless",
+            category: "AI 語音靈感速記 × 分鏡腳本生成",
+            tagline: "開口碎念即成電影感腳本與分鏡大綱",
+            badge: "悟哥工作流必備",
+            description: "靈感稍縱即逝，邊開車邊勘景怎麼寫分鏡？我不習慣盯著螢幕打字，而是對著手機碎碎念。Typeless 能自動去除贅字、理清邏輯，快速生成結構化短影音腳本與口播文案，是維度影學高產出的幕後功臣。",
+            affiliateUrl: siteInfo.typelessUrl || "https://www.typeless.com/?via=cinedimension",
+            ctaText: "體驗悟哥專屬 Typeless 連結",
+            features: [
+              "口語碎念秒轉條列式短影音分鏡",
+              "自動消除口頭禪、修飾語氣與贅詞",
+              "跨裝置同步，隨時捕捉街頭攝影與勘景靈感"
+            ]
+          }
+        ]
       },
       message: `[CMS] 更新視覺素材與 ${portfolio.length} 筆作品集 (${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })})`
     };
@@ -856,6 +874,22 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
                     placeholder="例如：cinedimension_official"
                     className="w-full px-3 py-2 bg-[#191d27] border border-slate-700/70 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs text-[#e5c792] font-semibold mb-1 flex items-center gap-1.5">
+                    <span>Typeless 聯盟推廣連結 (Creator&apos;s Toolkit 專屬推薦)</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    value={siteInfo.typelessUrl || ''} 
+                    onChange={(e) => updateSiteInfo({ typelessUrl: e.target.value })}
+                    placeholder="https://www.typeless.com/?via=cinedimension"
+                    className="w-full px-3 py-2 bg-[#191d27] border border-[#a3845b]/50 rounded-xl text-sm text-[#e5c792] focus:outline-none focus:border-[#a3845b]"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    全站「創作者秘密武器」區塊與頁尾推薦均會同步更新此聯盟推廣連結。
+                  </p>
                 </div>
               </div>
             </div>

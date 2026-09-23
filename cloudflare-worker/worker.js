@@ -120,6 +120,24 @@ const DEFAULT_INITIAL_PORTFOLIO = [
   }
 ];
 
+const DEFAULT_TOOLS = [
+  {
+    id: "typeless",
+    name: "Typeless",
+    category: "AI 語音靈感速記 × 分鏡腳本生成",
+    tagline: "開口碎念即成電影感腳本與分鏡大綱",
+    badge: "悟哥工作流必備",
+    description: "靈感稍縱即逝，邊開車邊勘景怎麼寫分鏡？我不習慣盯著螢幕打字，而是對著手機碎碎念。Typeless 能自動去除贅字、理清邏輯，快速生成結構化短影音腳本與口播文案，是維度影學高產出的幕後功臣。",
+    affiliateUrl: "https://www.typeless.com/?via=cinedimension",
+    ctaText: "體驗悟哥專屬 Typeless 連結",
+    features: [
+      "口語碎念秒轉條列式短影音分鏡",
+      "自動消除口頭禪、修飾語氣與贅詞",
+      "跨裝置同步，隨時捕捉街頭攝影與勘景靈感"
+    ]
+  }
+];
+
 const DEFAULT_SITE_CONTENT = {
   siteInfo: {
     title: "維度影學 Cine Dimension",
@@ -128,13 +146,16 @@ const DEFAULT_SITE_CONTENT = {
     youtube: "@cinedimens",
     facebook: "維度影學 Cine Dimension",
     instagram: "",
-    portaly: "https://portaly.cc/cinedimension"
+    portaly: "https://portaly.cc/cinedimension",
+    typelessUrl: "https://www.typeless.com/?via=cinedimension",
+    logoUrl: "https://assets.cine-dimension.com/Logo.svg"
   },
   assets: {
     logo: "https://assets.cine-dimension.com/Logo.svg",
     founderImage: "https://assets.cine-dimension.com/avatar.JPG"
   },
-  portfolio: DEFAULT_INITIAL_PORTFOLIO
+  portfolio: DEFAULT_INITIAL_PORTFOLIO,
+  tools: DEFAULT_TOOLS
 };
 
 export default {
@@ -296,6 +317,14 @@ async function handleGetContent(env) {
 
     if (!Array.isArray(content.portfolio) || content.portfolio.length === 0) {
       content.portfolio = DEFAULT_INITIAL_PORTFOLIO;
+    }
+
+    if (!Array.isArray(content.tools) || content.tools.length === 0) {
+      content.tools = DEFAULT_TOOLS;
+    }
+
+    if (!content.siteInfo.typelessUrl) {
+      content.siteInfo.typelessUrl = DEFAULT_SITE_CONTENT.siteInfo.typelessUrl;
     }
   }
 

@@ -1,4 +1,4 @@
-import { FounderInfo, ServiceItem, PortfolioItem, Testimonial } from '../types';
+import { FounderInfo, ServiceItem, PortfolioItem, Testimonial, ToolkitItem } from '../types';
 import { STATIC_ASSETS } from '../constants/assets';
 
 export const FOUNDER_INFO: FounderInfo = {
@@ -495,6 +495,24 @@ export const QUIZ_QUESTIONS = [
       { label: '電腦 + 手機 + 想要導入 AI 生成工具', recommendId: 'ai-video-camp' },
       { label: '團體/員工的手機與基礎燈光道具', recommendId: 'enterprise-training' },
       { label: '希望能有專業導演團隊協助拍攝大片', recommendId: 'commercial-consulting' }
+    ]
+  }
+];
+
+export const DEFAULT_TOOLS: ToolkitItem[] = [
+  {
+    id: "typeless",
+    name: "Typeless",
+    category: "AI 語音靈感速記 × 分鏡腳本生成",
+    tagline: "開口碎念即成電影感腳本與分鏡大綱",
+    badge: "悟哥工作流必備",
+    description: "靈感稍縱即逝，邊開車邊勘景怎麼寫分鏡？我不習慣盯著螢幕打字，而是對著手機碎碎念。Typeless 能自動去除贅字、理清邏輯，快速生成結構化短影音腳本與口播文案，是維度影學高產出的幕後功臣。",
+    affiliateUrl: "https://www.typeless.com/?via=cinedimension",
+    ctaText: "體驗悟哥專屬 Typeless 連結",
+    features: [
+      "口語碎念秒轉條列式短影音分鏡",
+      "自動消除口頭禪、修飾語氣與贅詞",
+      "跨裝置同步，隨時捕捉街頭攝影與勘景靈感"
     ]
   }
 ];

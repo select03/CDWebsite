@@ -109,6 +109,24 @@ const DEFAULT_INITIAL_PORTFOLIO = [
   }
 ];
 
+const DEFAULT_TOOLS = [
+  {
+    id: "typeless",
+    name: "Typeless",
+    category: "AI 語音靈感速記 × 分鏡腳本生成",
+    tagline: "開口碎念即成電影感腳本與分鏡大綱",
+    badge: "悟哥工作流必備",
+    description: "靈感稍縱即逝，邊開車邊勘景怎麼寫分鏡？我不習慣盯著螢幕打字，而是對著手機碎碎念。Typeless 能自動去除贅字、理清邏輯，快速生成結構化短影音腳本與口播文案，是維度影學高產出的幕後功臣。",
+    affiliateUrl: "https://www.typeless.com/?via=cinedimension",
+    ctaText: "體驗悟哥專屬 Typeless 連結",
+    features: [
+      "口語碎念秒轉條列式短影音分鏡",
+      "自動消除口頭禪、修飾語氣與贅詞",
+      "跨裝置同步，隨時捕捉街頭攝影與勘景靈感"
+    ]
+  }
+];
+
 const DEFAULT_SITE_CONTENT = {
   siteInfo: {
     title: "維度影學 Cine Dimension",
@@ -118,6 +136,7 @@ const DEFAULT_SITE_CONTENT = {
     facebook: "維度影學 Cine Dimension",
     instagram: "",
     portaly: "https://portaly.cc/cinedimension",
+    typelessUrl: "https://www.typeless.com/?via=cinedimension",
     logoUrl: "https://assets.cine-dimension.com/Logo.svg"
   },
   site: {
@@ -128,7 +147,8 @@ const DEFAULT_SITE_CONTENT = {
     logo: "https://assets.cine-dimension.com/Logo.svg",
     founderImage: "https://assets.cine-dimension.com/avatar.JPG"
   },
-  portfolio: DEFAULT_INITIAL_PORTFOLIO
+  portfolio: DEFAULT_INITIAL_PORTFOLIO,
+  tools: DEFAULT_TOOLS
 };
 
 // In-memory runtime database cache for local server
@@ -223,6 +243,14 @@ app.get(["/api/content", "/api/remote-content"], async (_req, res) => {
       const data: any = await remoteRes.json();
       if (data?.content && (data.content.portfolio || data.content.siteInfo || data.content.assets)) {
         inMemoryContentCache = data.content;
+        if (!inMemoryContentCache.tools || !Array.isArray(inMemoryContentCache.tools) || inMemoryContentCache.tools.length === 0) {
+          inMemoryContentCache.tools = DEFAULT_TOOLS;
+        }
+        if (!inMemoryContentCache.siteInfo) {
+          inMemoryContentCache.siteInfo = { ...DEFAULT_SITE_CONTENT.siteInfo };
+        } else if (!inMemoryContentCache.siteInfo.typelessUrl) {
+          inMemoryContentCache.siteInfo.typelessUrl = DEFAULT_SITE_CONTENT.siteInfo.typelessUrl;
+        }
         lastProxyFetchTime = now;
         return res.json({
           success: true,

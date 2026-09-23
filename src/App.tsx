@@ -13,6 +13,7 @@ import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { VideoTrailerModal } from './components/VideoTrailerModal';
 import { HomeQuickPortals } from './components/HomeQuickPortals';
+import { CreatorToolkit } from './components/CreatorToolkit';
 import { AdminCMS } from './components/AdminCMS';
 
 const API_CONTENT_URL = 'https://cms-api.cine-dimension.com/api/content';
@@ -167,7 +168,10 @@ function MainAppContent() {
           {/* 2. 四大教學支柱 (Four Teaching Pillars) */}
           <PhilosophySection onNavigate={handleNavigate} />
 
-          {/* 3. 濃縮導覽區塊 (Condensed Portal Cards) */}
+          {/* 3. 悟哥的工作流秘密武器 (Creator's Toolkit: Typeless) */}
+          <CreatorToolkit />
+
+          {/* 4. 濃縮導覽區塊 (Condensed Portal Cards) */}
           <HomeQuickPortals
             onNavigate={handleNavigate}
           />
@@ -181,6 +185,7 @@ function MainAppContent() {
             onOpenContactWithService={handleSelectServiceForContact}
           />
           <PhilosophySection onNavigate={handleNavigate} />
+          <CreatorToolkit />
           <ContactSection
             preselectedService={preselectedService}
             onClearPreselectedService={() => setPreselectedService('')}
@@ -194,6 +199,7 @@ function MainAppContent() {
             onNavigate={handleNavigate}
             onSelectServiceForContact={handleSelectServiceForContact}
           />
+          <CreatorToolkit />
           <PhilosophySection onNavigate={handleNavigate} />
           <ContactSection
             preselectedService={preselectedService}

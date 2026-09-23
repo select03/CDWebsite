@@ -462,6 +462,23 @@
                 class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500"
               />
             </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-amber-300 mb-1 flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Typeless 聯盟推廣連結 (Creator&apos;s Toolkit 專屬秘密裝備)</span>
+              </label>
+              <input 
+                type="text" 
+                id="meta-typelessUrl" 
+                placeholder="https://www.typeless.com/?via=cinedimension"
+                oninput="handleSiteInfoChange('typelessUrl', this.value)"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-amber-600/40 text-xs text-amber-200 focus:outline-none focus:border-amber-400"
+              />
+              <p class="text-[11px] text-slate-400 mt-1">
+                全站「創作者秘密武器」區塊與頁尾推薦均會同步更新此聯盟推廣連結。
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -992,6 +1009,7 @@
         facebook: '維度影學 Cine Dimension',
         instagram: '',
         line: '',
+        typelessUrl: 'https://www.typeless.com/?via=cinedimension',
         logoUrl: 'https://assets.cine-dimension.com/Logo.svg'
       },
       assets: {
@@ -999,7 +1017,24 @@
         founderImage: 'https://assets.cine-dimension.com/avatar.JPG',
         avatar: 'https://assets.cine-dimension.com/avatar.JPG'
       },
-      portfolio: JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO))
+      portfolio: JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO)),
+      tools: [
+        {
+          id: "typeless",
+          name: "Typeless",
+          category: "AI 語音靈感速記 × 分鏡腳本生成",
+          tagline: "開口碎念即成電影感腳本與分鏡大綱",
+          badge: "悟哥工作流必備",
+          description: "靈感稍縱即逝，邊開車邊勘景怎麼寫分鏡？我不習慣盯著螢幕打字，而是對著手機碎碎念。Typeless 能自動去除贅字、理清邏輯，快速生成結構化短影音腳本與口播文案，是維度影學高產出的幕後功臣。",
+          affiliateUrl: "https://www.typeless.com/?via=cinedimension",
+          ctaText: "體驗悟哥專屬 Typeless 連結",
+          features: [
+            "口語碎念秒轉條列式短影音分鏡",
+            "自動消除口頭禪、修飾語氣與贅詞",
+            "跨裝置同步，隨時捕捉街頭攝影與勘景靈感"
+          ]
+        }
+      ]
     };
     // 支援最新規範之全域別名物件
     let currentSiteData = currentContent;
@@ -1357,6 +1392,7 @@
       const latestFacebook = document.getElementById('meta-facebook')?.value.trim() || currentSiteData.siteInfo?.facebook || '維度影學 Cine Dimension';
       const latestInstagram = document.getElementById('meta-instagram')?.value.trim() || currentSiteData.siteInfo?.instagram || '';
       const latestLine = document.getElementById('meta-line')?.value.trim() || currentSiteData.siteInfo?.line || '';
+      const latestTypelessUrl = document.getElementById('meta-typelessUrl')?.value.trim() || currentSiteData.siteInfo?.typelessUrl || 'https://www.typeless.com/?via=cinedimension';
 
       // 同步全域物件
       currentSiteData.siteInfo = {
@@ -1368,6 +1404,7 @@
         facebook: latestFacebook,
         instagram: latestInstagram,
         line: latestLine,
+        typelessUrl: latestTypelessUrl,
         logoUrl: latestLogo,
         avatar: latestAvatar
       };
@@ -1411,6 +1448,23 @@
         },
         // 確保當前編輯過的作品集 (包含標籤、年份) 完整覆蓋
         portfolio: currentPortfolioList,
+        tools: currentSiteData.tools || [
+          {
+            id: "typeless",
+            name: "Typeless",
+            category: "AI 語音靈感速記 × 分鏡腳本生成",
+            tagline: "開口碎念即成電影感腳本與分鏡大綱",
+            badge: "悟哥工作流必備",
+            description: "靈感稍縱即逝，邊開車邊勘景怎麼寫分鏡？我不習慣盯著螢幕打字，而是對著手機碎碎念。Typeless 能自動去除贅字、理清邏輯，快速生成結構化短影音腳本與口播文案，是維度影學高產出的幕後功臣。",
+            affiliateUrl: latestTypelessUrl,
+            ctaText: "體驗悟哥專屬 Typeless 連結",
+            features: [
+              "口語碎念秒轉條列式短影音分鏡",
+              "自動消除口頭禪、修飾語氣與贅詞",
+              "跨裝置同步，隨時捕捉街頭攝影與勘景靈感"
+            ]
+          }
+        ],
         updatedAt: new Date().toISOString()
       };
 
@@ -1642,7 +1696,7 @@
      */
     function renderSiteInfoTab() {
       const info = currentContent.siteInfo || {};
-      const fields = ['title', 'email', 'tagline', 'youtube', 'facebook', 'instagram', 'line'];
+      const fields = ['title', 'email', 'tagline', 'youtube', 'facebook', 'instagram', 'line', 'typelessUrl'];
       fields.forEach(field => {
         const el = document.getElementById(`meta-${field}`);
         if (el) el.value = info[field] || '';

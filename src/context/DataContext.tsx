@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { FounderInfo, ServiceItem, PortfolioItem, Testimonial, InquiryLead, SiteAssets, SiteMetaInfo } from '../types';
-import { FOUNDER_INFO, SERVICES_CATALOG, PORTFOLIO_CASES, TESTIMONIALS } from '../data/siteData';
+import { FounderInfo, ServiceItem, PortfolioItem, Testimonial, InquiryLead, SiteAssets, SiteMetaInfo, ToolkitItem } from '../types';
+import { FOUNDER_INFO, SERVICES_CATALOG, PORTFOLIO_CASES, TESTIMONIALS, DEFAULT_TOOLS } from '../data/siteData';
 import { STATIC_ASSETS } from '../constants/assets';
 
 export interface DataContextType {
@@ -10,6 +10,7 @@ export interface DataContextType {
   services: ServiceItem[];
   portfolio: PortfolioItem[];
   testimonials: Testimonial[];
+  tools: ToolkitItem[];
   leads: InquiryLead[];
   isLoading: boolean;
   isSyncingRemote: boolean;
@@ -18,6 +19,7 @@ export interface DataContextType {
   syncFromRemote: () => Promise<void>;
   updateAssets: (data: Partial<SiteAssets>) => void;
   updateSiteInfo: (data: Partial<SiteMetaInfo>) => void;
+  updateTools?: (tools: ToolkitItem[]) => void;
   addLead: (lead: Partial<InquiryLead>) => void;
   updateFounderInfo: (data: Partial<FounderInfo>) => void;
   updateSocials: (data: Partial<FounderInfo['socials']>) => void;
@@ -35,11 +37,12 @@ export interface DataContextType {
 
 const STORAGE_KEYS = {
   ASSETS: 'cine_dimension_assets_v18',
-  SITE_INFO: 'cine_dimension_siteinfo_v18',
+  SITE_INFO: 'cine_dimension_siteinfo_v19',
   FOUNDER: 'cine_dimension_founder_v18',
   SERVICES: 'cine_dimension_services_v21',
   PORTFOLIO: 'cine_dimension_portfolio_v20',
   TESTIMONIALS: 'cine_dimension_testimonials_v22',
+  TOOLS: 'cine_dimension_tools_v1',
   LEADS: 'cinedimension_inquiries'
 };
 
@@ -84,7 +87,8 @@ const DEFAULT_SITE_INFO: SiteMetaInfo = {
   youtube: '@cinedimens',
   facebook: '維度影學 Cine Dimension',
   instagram: '',
-  portaly: 'https://portaly.cc/cinedimension'
+  portaly: 'https://portaly.cc/cinedimension',
+  typelessUrl: 'https://www.typeless.com/?via=cinedimension'
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -218,7 +222,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return [];
   });
 
+  const [tools, setTools] = useState<ToolkitItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.TOOLS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return DEFAULT_TOOLS;
+  });
+
   // Save changes locally
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.TOOLS, JSON.stringify(tools));
+    } catch (e) {}
+  }, [tools]);
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.ASSETS, JSON.stringify(assets));
@@ -356,6 +373,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPortfolio(mergePortfolioWithDefaults(rawData.portfolio, PORTFOLIO_CASES));
       }
 
+      // D. Update Tools (Creator's Toolkit)
+      if (Array.isArray(rawData.tools) && rawData.tools.length > 0) {
+        setTools(rawData.tools);
+      }
+
       setLastSyncTime(new Date().toLocaleTimeString('zh-TW', { hour12: false }));
     }
 
@@ -466,12 +488,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setServices(SERVICES_CATALOG);
     setPortfolio(PORTFOLIO_CASES);
     setTestimonials(TESTIMONIALS);
+    setTools(DEFAULT_TOOLS);
     localStorage.removeItem(STORAGE_KEYS.ASSETS);
     localStorage.removeItem(STORAGE_KEYS.SITE_INFO);
     localStorage.removeItem(STORAGE_KEYS.FOUNDER);
     localStorage.removeItem(STORAGE_KEYS.SERVICES);
     localStorage.removeItem(STORAGE_KEYS.PORTFOLIO);
     localStorage.removeItem(STORAGE_KEYS.TESTIMONIALS);
+    localStorage.removeItem(STORAGE_KEYS.TOOLS);
   };
 
   return (
@@ -483,6 +507,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         services,
         portfolio,
         testimonials,
+        tools,
         leads,
         isLoading,
         isSyncingRemote,

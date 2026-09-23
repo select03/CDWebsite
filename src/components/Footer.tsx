@@ -9,7 +9,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const { founderInfo, assets } = useSiteData();
+  const { founderInfo, assets, siteInfo } = useSiteData();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -73,6 +73,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <p>• Contact：<a href={`mailto:${founderInfo.socials.email}`} className="text-stone-900 font-medium hover:underline">{founderInfo.socials.email}</a></p>
               <p>• YouTube：<a href="https://www.youtube.com/@cinedimens" target="_blank" rel="noopener noreferrer" className="text-stone-900 hover:underline">@cinedimens</a></p>
               <p>• Facebook 粉絲團：<a href="https://www.facebook.com/profile.php?id=100093152435465&mibextid=LQQJ4d" target="_blank" rel="noopener noreferrer" className="text-stone-900 hover:underline">維度影學 Cine Dimension</a></p>
+              <p>• 推薦裝備：<a href={siteInfo?.typelessUrl || 'https://www.typeless.com/?via=cinedimension'} target="_blank" rel="noopener noreferrer" className="text-[#a3845b] font-semibold hover:underline">Typeless AI 語音腳本（悟哥專屬）</a></p>
             </div>
           </div>
 

@@ -14,6 +14,21 @@ export interface SiteMetaInfo {
   facebook?: string;
   instagram?: string;
   portaly?: string;
+  typelessUrl?: string;
+  logoUrl?: string;
+}
+
+export interface ToolkitItem {
+  id: string;
+  name: string;
+  category: string;
+  tagline: string;
+  badge?: string;
+  description: string;
+  affiliateUrl: string;
+  ctaText?: string;
+  features: string[];
+  icon?: string;
 }
 
 export interface FounderSocials {
