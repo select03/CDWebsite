@@ -39,7 +39,7 @@ const STORAGE_KEYS = {
   ASSETS: 'cine_dimension_assets_v18',
   SITE_INFO: 'cine_dimension_siteinfo_v19',
   FOUNDER: 'cine_dimension_founder_v18',
-  SERVICES: 'cine_dimension_services_v21',
+  SERVICES: 'cine_dimension_services_v25',
   PORTFOLIO: 'cine_dimension_portfolio_v20',
   TESTIMONIALS: 'cine_dimension_testimonials_v22',
   TOOLS: 'cine_dimension_tools_v1',
@@ -184,13 +184,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = localStorage.getItem(STORAGE_KEYS.SERVICES);
       if (saved) {
         const parsed: ServiceItem[] = JSON.parse(saved);
-        return parsed.map(s => {
-          if (s.id === 'enterprise-training') {
-            const def = SERVICES_CATALOG.find(c => c.id === 'enterprise-training');
-            return { ...s, image: def?.image || 'https://assets.cine-dimension.com/images/mob_pho_workshop.png' };
-          }
-          return s;
-        });
+        if (Array.isArray(parsed) && parsed.some(s => s.id === 'mobile-cine-course')) {
+          return parsed.map(s => {
+            if (s.id === 'enterprise-training') {
+              const def = SERVICES_CATALOG.find(c => c.id === 'enterprise-training');
+              return { ...s, image: def?.image || 'https://assets.cine-dimension.com/images/mob_pho_workshop.png' };
+            }
+            return s;
+          });
+        }
       }
     } catch (e) {}
     return SERVICES_CATALOG;

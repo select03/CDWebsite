@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSiteData } from '../context/DataContext';
 import { ServiceItem, PageView } from '../types';
 import { CourseDetailModal } from './CourseDetailModal';
-import { Clock, Video, ArrowRight, CheckCircle2, BookOpen, Sparkles, Download, ExternalLink, GraduationCap } from 'lucide-react';
+import { Clock, Video, ArrowRight, CheckCircle2, BookOpen, Sparkles, Download, ExternalLink } from 'lucide-react';
 
 interface ServicesSectionProps {
   onNavigate: (view: PageView) => void;
