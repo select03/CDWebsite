@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ContactFormData } from '../types';
 import { useSiteData } from '../context/DataContext';
 import { 
@@ -46,6 +46,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 
   const [formStartTime, setFormStartTime] = useState<number>(Date.now());
   const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const [turnstileWidgetId, setTurnstileWidgetId] = useState<string | null>(null);
   const [isHumanVerified, setIsHumanVerified] = useState<boolean>(false);
   const [isVerifyingHuman, setIsVerifyingHuman] = useState<boolean>(false);
   const [verifyHighlightError, setVerifyHighlightError] = useState<boolean>(false);
@@ -59,13 +61,44 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   }, []);
 
   useEffect(() => {
-    (window as any).onCineDimensionTurnstileSuccess = (token: string) => {
-      setTurnstileToken(token);
-      setIsHumanVerified(true);
-      setErrorMessage('');
+    let cancelled = false;
+    let intervalId: number;
+
+    const tryRender = () => {
+      const w = window as any;
+      if (cancelled) return;
+      if (w.turnstile && turnstileContainerRef.current && !turnstileContainerRef.current.hasChildNodes()) {
+        try {
+          const id = w.turnstile.render(turnstileContainerRef.current, {
+            sitekey: "0x4AAAAAAFF8ScE2hSBOMh18",
+            callback: (token: string) => {
+              setTurnstileToken(token);
+              setIsHumanVerified(true);
+              setErrorMessage('');
+            },
+            "expired-callback": () => {
+              setTurnstileToken('');
+              setIsHumanVerified(false);
+            },
+            "error-callback": () => {
+              setTurnstileToken('');
+              setIsHumanVerified(false);
+            }
+          });
+          setTurnstileWidgetId(id);
+          clearInterval(intervalId);
+        } catch (err) {
+          console.warn("[Turnstile Render]", err);
+        }
+      }
     };
+
+    intervalId = window.setInterval(tryRender, 300);
+    tryRender();
+
     return () => {
-      delete (window as any).onCineDimensionTurnstileSuccess;
+      cancelled = true;
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -484,7 +517,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 
                   {/* Cloudflare Turnstile Verification Widget */}
                   <div className="pt-2 pb-1 flex justify-center">
-                    <div className="cf-turnstile" data-sitekey="0x4AAAAAAFF8ScE2hSBOMh18" data-callback="onCineDimensionTurnstileSuccess"></div>
+                    <div ref={turnstileContainerRef}></div>
                   </div>
 
                   {/* Anti-Bot Security Verification Component (防機器人安全認證機制) */}
