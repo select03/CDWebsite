@@ -45,6 +45,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   });
 
   const [formStartTime, setFormStartTime] = useState<number>(Date.now());
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
   const [isHumanVerified, setIsHumanVerified] = useState<boolean>(false);
   const [isVerifyingHuman, setIsVerifyingHuman] = useState<boolean>(false);
   const [verifyHighlightError, setVerifyHighlightError] = useState<boolean>(false);
@@ -55,6 +56,17 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 
   useEffect(() => {
     setFormStartTime(Date.now());
+  }, []);
+
+  useEffect(() => {
+    (window as any).onCineDimensionTurnstileSuccess = (token: string) => {
+      setTurnstileToken(token);
+      setIsHumanVerified(true);
+      setErrorMessage('');
+    };
+    return () => {
+      delete (window as any).onCineDimensionTurnstileSuccess;
+    };
   }, []);
 
   useEffect(() => {
@@ -102,21 +114,14 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
       return;
     }
 
-    // 2. Anti-bot Human Verification check
-    if (!isHumanVerified) {
-      setVerifyHighlightError(true);
-      setErrorMessage('請先點擊勾選下方的「防機器人安全認證」以確認您不是機器人。');
-      return;
-    }
-
-    // 3. Submission speed check
+    // 2. Submission speed check
     const duration = Date.now() - formStartTime;
     if (duration < 1200) {
       setErrorMessage('填寫速度過快，請稍候重試');
       return;
     }
 
-    // 4. Required Fields
+    // 3. Required Fields
     if (!formData.name.trim()) {
       setErrorMessage('請填寫您的姓名或稱呼');
       return;
@@ -134,11 +139,18 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
       return;
     }
 
+    // 4. Cloudflare Turnstile Human Verification check
+    if (!turnstileToken || !turnstileToken.trim()) {
+      setErrorMessage('請完成人機驗證');
+      setVerifyHighlightError(true);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Send to Worker or Local proxy API
-      const res = await fetch('/api/submit-form', {
+      // Send to Worker API
+      const res = await fetch('https://cms-api.cine-dimension.com/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -152,6 +164,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           message: formData.message,
           hp_website: formData.hp_website,
           humanVerified: true,
+          cfTurnstileResponse: turnstileToken,
           durationMs: duration
         })
       });
@@ -467,6 +480,11 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                       placeholder="請簡單描述您目前在拍攝或企劃上遇到的痛點、學員人數，或專案目標..."
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F4EE] border border-stone-300 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800 focus:ring-1 focus:ring-stone-800 transition-all text-xs sm:text-sm"
                     />
+                  </div>
+
+                  {/* Cloudflare Turnstile Verification Widget */}
+                  <div className="pt-2 pb-1 flex justify-center">
+                    <div className="cf-turnstile" data-sitekey="0x4AAAAAAFF8ScE2hSBOMh18" data-callback="onCineDimensionTurnstileSuccess"></div>
                   </div>
 
                   {/* Anti-Bot Security Verification Component (防機器人安全認證機制) */}
