@@ -255,6 +255,43 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
     }
   };
 
+  // Export leads to CSV with UTF-8 BOM
+  const handleExportLeadsCsv = () => {
+    if (!leads || leads.length === 0) return;
+
+    const headers = ['時間', '姓名', 'Email', '電話', '單位', '服務項目', '預算範圍', '期望時間', '需求說明', '狀態'];
+
+    const escapeCsvField = (value: any) => {
+      const str = String(value ?? '').replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = leads.map((lead: any) => [
+      lead.timestamp || '',
+      lead.name || '',
+      lead.email || '',
+      lead.phone || '',
+      lead.organization || '',
+      lead.serviceType || lead.serviceRequested || lead.service || '',
+      lead.budgetRange || '',
+      lead.preferredTime || '',
+      lead.message || '',
+      lead.driveStatus || ''
+    ].map(escapeCsvField).join(','));
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsvField).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `維度影學預約名單_${dateStr}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Test Telegram Bot Push via Worker
   const handleTestTelegramBot = async () => {
     setIsTestingTelegram(true);
@@ -926,10 +963,20 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({ onNavigate }) => {
 
             {/* Leads List */}
             <div className="space-y-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Inbox className="w-4 h-4 text-amber-400" />
-                <span>預約名單紀錄（共 {leads.length} 筆）</span>
-              </h3>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Inbox className="w-4 h-4 text-amber-400" />
+                  <span>預約名單紀錄（共 {leads.length} 筆）</span>
+                </h3>
+                <button
+                  onClick={handleExportLeadsCsv}
+                  disabled={leads.length === 0}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>匯出 CSV</span>
+                </button>
+              </div>
 
               {leads.length === 0 ? (
                 <div className="bg-[#141720] border border-slate-800 rounded-2xl p-10 text-center space-y-2">
