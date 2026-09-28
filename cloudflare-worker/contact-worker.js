@@ -11,6 +11,12 @@
  * ==============================================================================
  */
 
+// 允許存取本 Worker API 的來源網域清單 (CORS 白名單)
+const ALLOWED_ORIGINS = [
+  "https://cine-dimension.com",
+  "https://www.cine-dimension.com"
+];
+
 // 6 大經典預設作品集
 const DEFAULT_INITIAL_PORTFOLIO = [
   {
@@ -153,24 +159,33 @@ const DEFAULT_SITE_CONTENT = {
 };
 
 // ==========================================
-// 全域 CORS 標頭設定
+// 全域 CORS 標頭函式
 // ==========================================
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Token, X-Admin-Pass, X-Admin-Secret, X-Requested-With, Accept",
-  "Access-Control-Max-Age": "86400"
-};
+function getCorsHeaders(request) {
+  const origin = (request?.headers?.get("Origin") || request?.headers?.get("origin") || "").trim();
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Token, X-Admin-Pass, X-Admin-Secret, X-Requested-With, Accept",
+    "Access-Control-Max-Age": "86400"
+  };
+}
 
 /**
  * 輔助函式：JSON 回應封裝
  */
-function jsonResponse(data, status = 200, extraHeaders = {}) {
+function jsonResponse(request, data, status = 200, extraHeaders = {}) {
+  // 容錯防護：若首個參數非 Request 物件，自動向後相容
+  if (request && typeof request === "object" && !request.headers && data === undefined) {
+    data = request;
+    request = null;
+  }
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      ...corsHeaders,
+      ...getCorsHeaders(request),
       ...extraHeaders
     }
   });
@@ -233,7 +248,7 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       });
     }
 
@@ -245,7 +260,7 @@ export default {
       // 2. GET / 或 GET /api/ping：健康檢查與診斷端點
       // =========================================================================
       if (path === "/" || path === "/api/ping" || path === "/api/health" || path === "/ping") {
-        return jsonResponse({
+        return jsonResponse(request, {
           status: "ok",
           success: true,
           message: "維度影學 API 運作正常",
@@ -262,9 +277,9 @@ export default {
       // =========================================================================
       if (path === "/api/verify" && request.method === "POST") {
         if (!isAuthenticated(request, env)) {
-          return jsonResponse({ success: false, error: "密碼錯誤或金鑰無效" }, 401);
+          return jsonResponse(request, { success: false, error: "密碼錯誤或金鑰無效" }, 401);
         }
-        return jsonResponse({ success: true, message: "管理員驗證成功" });
+        return jsonResponse(request, { success: true, message: "管理員驗證成功" });
       }
 
       // =========================================================================
@@ -294,7 +309,7 @@ export default {
           }
         }
 
-        return jsonResponse({
+        return jsonResponse(request, {
           success: true,
           content,
           source: env.SITE_KV ? "cloudflare-kv" : "default-memory"
@@ -309,11 +324,11 @@ export default {
       // =========================================================================
       if (path === "/api/save" && request.method === "POST") {
         if (!isAuthenticated(request, env)) {
-          return jsonResponse({ success: false, error: "未授權：請先登入後台" }, 401);
+          return jsonResponse(request, { success: false, error: "未授權：請先登入後台" }, 401);
         }
 
         if (!env.SITE_KV) {
-          return jsonResponse({
+          return jsonResponse(request, {
             success: false,
             error: "Worker 尚未綁定 SITE_KV 資源，請在 Cloudflare 控制台設定 KV Namespace 綁定（變數名稱：SITE_KV）。"
           }, 500);
@@ -323,12 +338,12 @@ export default {
         try {
           body = await request.json();
         } catch (err) {
-          return jsonResponse({ success: false, error: "無效的 JSON 資料格式" }, 400);
+          return jsonResponse(request, { success: false, error: "無效的 JSON 資料格式" }, 400);
         }
 
         const contentToSave = body.content || body;
         if (!contentToSave || (!contentToSave.portfolio && !contentToSave.siteInfo && !contentToSave.assets)) {
-          return jsonResponse({ success: false, error: "缺少有效的內容結構 (content)" }, 400);
+          return jsonResponse(request, { success: false, error: "缺少有效的內容結構 (content)" }, 400);
         }
 
         // 確保 Logo 連結正確保存上傳後的真實路徑（優先採用 siteInfo.logoUrl / site.logoUrl / assets.logo）
@@ -354,7 +369,7 @@ export default {
 
         await env.SITE_KV.put("site_content", JSON.stringify(contentToSave));
 
-        return jsonResponse({
+        return jsonResponse(request, {
           success: true,
           message: "🎉 網站內容與作品集已成功發布至 Cloudflare KV 雲端資料庫！",
           timestamp: new Date().toISOString()
@@ -367,11 +382,11 @@ export default {
       // =========================================================================
       if (path === "/api/upload" && request.method === "POST") {
         if (!isAuthenticated(request, env)) {
-          return jsonResponse({ success: false, error: "未授權：請先登入後台" }, 401);
+          return jsonResponse(request, { success: false, error: "未授權：請先登入後台" }, 401);
         }
 
         if (!env.MEDIA_BUCKET) {
-          return jsonResponse({
+          return jsonResponse(request, {
             success: false,
             error: "Worker 尚未綁定 MEDIA_BUCKET (R2) 資源，請在 Cloudflare 控制台綁定 R2 Bucket（變數名稱：MEDIA_BUCKET）。"
           }, 500);
@@ -426,7 +441,7 @@ export default {
         }
 
         if (!fileBuffer || fileBuffer.byteLength === 0) {
-          return jsonResponse({
+          return jsonResponse(request, {
             success: false,
             error: "上傳檔案為空或解析失敗，請確認已選取有效圖檔。"
           }, 400);
@@ -471,7 +486,7 @@ export default {
         const publicDomain = (env.R2_PUBLIC_DOMAIN || "assets.cine-dimension.com").trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
         const publicUrl = `https://${publicDomain}/${key}`;
 
-        return jsonResponse({
+        return jsonResponse(request, {
           success: true,
           key,
           url: publicUrl,
@@ -491,14 +506,14 @@ export default {
         try {
           body = await request.json();
         } catch {
-          return jsonResponse({ success: false, error: "無效的 JSON 格式" }, 400);
+          return jsonResponse(request, { success: false, error: "無效的 JSON 格式" }, 400);
         }
 
         const { name, phone, email, service, message, plan, websiteUrlHoney, cfTurnstileResponse, turnstileToken } = body;
 
         // 蜜罐安全防護
         if (websiteUrlHoney) {
-          return jsonResponse({ success: true, message: "預約已送出" });
+          return jsonResponse(request, { success: true, message: "預約已送出" });
         }
 
         // Turnstile 人機驗證 (若配置有金鑰)
@@ -516,7 +531,7 @@ export default {
             });
             const tsData = await tsRes.json();
             if (!tsData.success) {
-              return jsonResponse({ success: false, error: "人機驗證未通過，請重新整理後再試" }, 400);
+              return jsonResponse(request, { success: false, error: "人機驗證未通過，請重新整理後再試" }, 400);
             }
           } catch (tsErr) {
             console.warn("[Turnstile Error]:", tsErr);
@@ -524,7 +539,7 @@ export default {
         }
 
         if (!name || (!phone && !email)) {
-          return jsonResponse({ success: false, error: "請填寫姓名與至少一種聯絡方式（電話或 Email）" }, 400);
+          return jsonResponse(request, { success: false, error: "請填寫姓名與至少一種聯絡方式（電話或 Email）" }, 400);
         }
 
         const leadRecord = {
@@ -578,7 +593,7 @@ export default {
           }
         }
 
-        return jsonResponse({
+        return jsonResponse(request, {
           success: true,
           message: "感謝您的預約！我們將盡快與您聯繫。",
           telegramNotified: telegramSent,
@@ -591,7 +606,7 @@ export default {
       // =========================================================================
       if (path === "/api/leads" && request.method === "GET") {
         if (!isAuthenticated(request, env)) {
-          return jsonResponse({ success: false, error: "未授權：請先登入後台" }, 401);
+          return jsonResponse(request, { success: false, error: "未授權：請先登入後台" }, 401);
         }
 
         let leads = [];
@@ -600,7 +615,7 @@ export default {
           leads = raw ? JSON.parse(raw) : [];
         }
 
-        return jsonResponse({
+        return jsonResponse(request, {
           success: true,
           leads,
           total: leads.length
@@ -612,25 +627,28 @@ export default {
       // =========================================================================
       if ((path.startsWith("/api/assets/") || path.startsWith("/assets/")) && request.method === "GET") {
         if (!env.MEDIA_BUCKET) {
-          return new Response("R2 未綁定", { status: 500, headers: corsHeaders });
+          return new Response("R2 未綁定", { status: 500, headers: getCorsHeaders(request) });
         }
         const key = path.replace(/^\/(api\/)?assets\//, "");
         const object = await env.MEDIA_BUCKET.get(key);
         if (!object) {
-          return new Response("檔案不存在", { status: 404, headers: corsHeaders });
+          return new Response("檔案不存在", { status: 404, headers: getCorsHeaders(request) });
         }
         const headers = new Headers();
         object.writeHttpMetadata(headers);
         headers.set("etag", object.httpEtag);
-        headers.set("Access-Control-Allow-Origin", "*");
+        const cors = getCorsHeaders(request);
+        for (const [k, v] of Object.entries(cors)) {
+          headers.set(k, v);
+        }
         headers.set("Cache-Control", "public, max-age=31536000, immutable");
         return new Response(object.body, { headers });
       }
 
-      return jsonResponse({ success: false, error: "端點不存在 (404 Not Found)" }, 404);
+      return jsonResponse(request, { success: false, error: "端點不存在 (404 Not Found)" }, 404);
     } catch (err) {
       console.error("[Worker Global Fatal Error]:", err);
-      return jsonResponse({
+      return jsonResponse(request, {
         success: false,
         error: "Worker 執行錯誤",
         message: err.message || String(err)
