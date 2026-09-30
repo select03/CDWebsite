@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cine-dimension.com/sitemap.xml

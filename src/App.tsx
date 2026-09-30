@@ -102,19 +102,6 @@ function MainAppContent() {
     }
   }, [remoteContent, updateSiteInfo, updateAssets]);
 
-  // Support accessing CMS via secret URL hash (e.g. your-site.com/#admin or /#cms)
-  useEffect(() => {
-    const checkHash = () => {
-      const hash = window.location.hash.toLowerCase();
-      if (hash === '#admin' || hash === '#cms') {
-        setCurrentView('admin');
-      }
-    };
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
-  }, []);
-
   const handleSelectServiceForContact = (serviceTitle: string) => {
     setPreselectedService(serviceTitle);
     setCurrentView('contact');
