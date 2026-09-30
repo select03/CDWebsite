@@ -5,7 +5,6 @@ import {
   Send, 
   CheckCircle2, 
   Copy, 
-  ShieldCheck, 
   Lock, 
   Mail, 
   Phone, 
@@ -48,9 +47,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const [turnstileWidgetId, setTurnstileWidgetId] = useState<string | null>(null);
-  const [isHumanVerified, setIsHumanVerified] = useState<boolean>(false);
-  const [isVerifyingHuman, setIsVerifyingHuman] = useState<boolean>(false);
-  const [verifyHighlightError, setVerifyHighlightError] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -73,16 +69,13 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
             sitekey: "0x4AAAAAAFF8ScE2hSBOMh18",
             callback: (token: string) => {
               setTurnstileToken(token);
-              setIsHumanVerified(true);
               setErrorMessage('');
             },
             "expired-callback": () => {
               setTurnstileToken('');
-              setIsHumanVerified(false);
             },
             "error-callback": () => {
               setTurnstileToken('');
-              setIsHumanVerified(false);
             }
           });
           setTurnstileWidgetId(id);
@@ -121,19 +114,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setErrorMessage('');
-  };
-
-  const handleVerifyHuman = () => {
-    if (isHumanVerified || isVerifyingHuman) return;
-    setIsVerifyingHuman(true);
-    setVerifyHighlightError(false);
-    setErrorMessage('');
-    
-    // Simulate quick intelligent validation check
-    setTimeout(() => {
-      setIsVerifyingHuman(false);
-      setIsHumanVerified(true);
-    }, 600);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,7 +155,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
     // 4. Cloudflare Turnstile Human Verification check
     if (!turnstileToken || !turnstileToken.trim()) {
       setErrorMessage('請完成人機驗證');
-      setVerifyHighlightError(true);
       return;
     }
 
@@ -520,57 +499,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     <div ref={turnstileContainerRef}></div>
                   </div>
 
-                  {/* Anti-Bot Security Verification Component (防機器人安全認證機制) */}
-                  <div className="pt-2 pb-1">
-                    <div 
-                      onClick={handleVerifyHuman}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleVerifyHuman(); }}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-center justify-between shadow-sm ${
-                        isHumanVerified 
-                          ? 'bg-emerald-50/90 border-emerald-400 text-emerald-950' 
-                          : isVerifyingHuman
-                          ? 'bg-amber-50 border-amber-300 text-amber-900'
-                          : verifyHighlightError
-                          ? 'bg-red-50/90 border-red-400 text-red-900 ring-2 ring-red-300'
-                          : 'bg-[#F6F4EE] hover:bg-stone-200/70 border-stone-300 text-stone-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all ${
-                          isHumanVerified
-                            ? 'bg-emerald-600 border-emerald-700 text-white shadow-sm'
-                            : isVerifyingHuman
-                            ? 'bg-amber-100 border-amber-400'
-                            : 'bg-white border-stone-400'
-                        }`}>
-                          {isHumanVerified ? (
-                            <Check className="w-4 h-4 text-white stroke-[3]" />
-                          ) : isVerifyingHuman ? (
-                            <span className="w-3.5 h-3.5 border-2 border-amber-700 border-t-transparent rounded-full animate-spin"></span>
-                          ) : (
-                            <div className="w-2.5 h-2.5 rounded-sm bg-transparent"></div>
-                          )}
-                        </div>
-
-                        <div>
-                          <p className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
-                            <span>{isHumanVerified ? '安全認證通過：已確認為真人操作' : isVerifyingHuman ? '正在進行安全驗證...' : '安全認證：點擊確認我不是機器人'}</span>
-                          </p>
-                          <p className="text-[11px] text-stone-500">
-                            {isHumanVerified ? 'Security Verified • 真人檢驗合格' : '防範惡意垃圾機器人干擾'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 text-stone-400 text-[11px]">
-                        <ShieldCheck className={`w-4 h-4 ${isHumanVerified ? 'text-emerald-600' : 'text-stone-400'}`} />
-                        <span className="text-[10px] font-mono font-semibold">SAFE GUARD</span>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Submit Button */}
                   <button
                     type="submit"
@@ -641,7 +569,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     <button
                       onClick={() => {
                         setSubmitted(false);
-                        setIsHumanVerified(false);
+                        setTurnstileToken('');
                         setFormData({
                           name: '',
                           email: '',
